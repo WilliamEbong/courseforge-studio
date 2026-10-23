@@ -21,6 +21,8 @@ test.beforeAll(async () => {
     prompts.push(prompt);
     if (prompt.startsWith('Course brief:') && prompt.includes('<document')) return { structured: { title: 'Fire Safety at Work', outline: OUTLINE } };
     if (prompt.startsWith('Course outline:')) return { structured: { findings: [{ title: 'Add feedback', detail: 'The alarm question has no feedback.', fix: 'Add feedback to the alarm question.', severity: 'medium' }] } };
+    const fb = /Write feedback for these questions: (.*)\./.exec(prompt)?.[1]; // the post-build feedback pass
+    if (fb) return { batches: [fb.split(', ').map((q) => ({ cmd: 'question.set', args: { slide: q.split(' ')[1], feedback: { correct: 'Yes: leaving first keeps you safe.', incorrect: 'Collecting your bag costs time you do not have. Leave first.' } } }))], summary: 'Wrote feedback.' };
     const scene = /Build scene (\S+)/.exec(prompt)?.[1];
     return { batches: [[{ cmd: 'scene.set', args: { id: scene, title: `${prompt.includes('alarm') ? 'When the alarm sounds' : 'Know the risks'} (built)` } }]], summary: 'Built.' };
   });
@@ -61,6 +63,7 @@ test('brief with a Word document → outline → build → open and review → p
   const file = path.join(root, 'fire-safety-at-work.course.json');
   const doc = io.loadCourse(file);
   expect(doc.scenes.map((s) => s.title)).toEqual(['Know the risks (built)', 'When the alarm sounds (built)']);
+  expect(doc.slides.filter((s) => s.question).map((s) => s.question.feedback.incorrect)).toEqual(['Collecting your bag costs time you do not have. Leave first.']);
   expect(fs.readdirSync(root).filter((f) => f.startsWith('.ai-draft'))).toEqual([]);
 
   const pub = await (await fetch(`${base}/api/courses/fire-safety-at-work/publish`, { method: 'POST', headers: { 'x-cf-token': TOKEN, 'content-type': 'application/json' }, body: JSON.stringify({ target: 'scorm12', zip: true }) })).json();
