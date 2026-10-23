@@ -67,7 +67,7 @@ export function fakeProvider(script) {
         if (!r.ok) return { ok: false, text: '', turns: tools.length, costUsd: 0, tools, error: { code: 'ai-error', message: r.errors[0].message } };
       }
       if (step.summary) onEvent({ type: 'text', text: step.summary });
-      return { ok: true, text: step.summary ?? 'Done.', turns: tools.length, costUsd: step.costUsd ?? 0.01, tools };
+      return { ok: true, text: step.summary ?? 'Done.', structured: step.structured ?? null, turns: tools.length, costUsd: step.costUsd ?? 0.01, tools };
     },
   };
 }

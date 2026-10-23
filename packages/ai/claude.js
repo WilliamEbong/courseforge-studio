@@ -47,18 +47,19 @@ function classify(text) {
 
 /**
  * Run one agent task. Resolves (never rejects) with
- * {ok, text, turns, costUsd, usage, tools:[{name, input}], error?}.
+ * {ok, text, structured, turns, costUsd, usage, tools:[{name, input}], error?}. `jsonSchema` asks for structured output;
+ * `tools`/`addDirs` let a run read attached files (Read, inside those folders only).
  */
-export function run({ system, prompt, model = MODELS.default, mcpConfig, allowedTools = [], maxTurns = 12, cwd, timeoutMs = 300000, onEvent = () => {} }) {
+export function run({ system, prompt, model = MODELS.default, mcpConfig, allowedTools = [], tools = '', addDirs = [], jsonSchema, maxTurns = 12, cwd, timeoutMs = 300000, onEvent = () => {} }) {
   const [cmd, pre, env] = claudeCommand();
   fs.mkdirSync(cwd, { recursive: true });
   const systemFile = path.join(cwd, 'system-prompt.md');
   fs.writeFileSync(systemFile, system);
   const args = [...pre, '-p', '--safe-mode', '--strict-mcp-config', ...(mcpConfig ? ['--mcp-config', mcpConfig] : []),
-    '--tools', '', ...(allowedTools.length ? ['--allowedTools', allowedTools.join(',')] : []), '--permission-mode', 'dontAsk',
+    '--tools', tools, ...addDirs.flatMap((d) => ['--add-dir', d]), ...(jsonSchema ? ['--json-schema', JSON.stringify(jsonSchema)] : []), ...(allowedTools.length ? ['--allowedTools', allowedTools.join(',')] : []), '--permission-mode', 'dontAsk',
     '--output-format', 'stream-json', '--verbose', '--no-session-persistence', '--model', model, '--system-prompt-file', systemFile];
   return new Promise((resolve) => {
-    const out = { ok: false, text: '', turns: 0, costUsd: 0, usage: null, tools: [] };
+    const out = { ok: false, text: '', structured: null, turns: 0, costUsd: 0, usage: null, tools: [] };
     let buf = '', stderr = '', done = false, stopped = null;
     const finish = (extra) => { if (done) return; done = true; clearTimeout(timer); resolve({ ...out, ...extra }); };
     let child;
@@ -76,6 +77,7 @@ export function run({ system, prompt, model = MODELS.default, mcpConfig, allowed
         if (parts.some((p) => p.type === 'tool_use') && ++out.turns > maxTurns) stop(fail('turn-limit', `Claude needed more than ${maxTurns} steps.`, 'Split the request into smaller ones. Nothing was applied.'));
       } else if (ev.type === 'result') {
         out.text = typeof ev.result === 'string' ? ev.result : '';
+        out.structured = ev.structured_output ?? null;
         out.costUsd = Number(ev.total_cost_usd) || 0;
         out.usage = ev.usage ?? null;
         out.ok = ev.is_error !== true && (!ev.subtype || ev.subtype === 'success');

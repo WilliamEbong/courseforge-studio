@@ -535,3 +535,29 @@ dialog.ai-settings { width: min(560px, calc(100vw - 32px)); }
   .top .tb-label { display: none; }
   .top button:has(> .nl) .ico { margin-right: 0; }
 }
+
+/* ---------- create with AI dialog and course review ---------- */
+dialog.ai-create { width: min(720px, calc(100vw - 32px)); }
+.cr-steps { display: flex; gap: 6px; margin: 0 0 16px; padding: 0; list-style: none; counter-reset: step; }
+.cr-steps li { flex: 1; padding: 6px 0 0; border-top: 3px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 600; counter-increment: step; }
+.cr-steps li::before { content: counter(step) ". "; }
+.cr-steps li.done { border-top-color: var(--accent); color: var(--text); }
+.cr-steps li[aria-current=step] { border-top-color: var(--accent); color: var(--accent); }
+.cr-form { display: grid; gap: 12px; padding: 0; }
+.cr-form .field { margin: 0; }
+.cr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cr-radio { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; }
+.cr-outline { font: 12.5px/1.55 var(--mono); }
+.cr-form .dlg-actions, .cr-done .dlg-actions, .cr-body > div > .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.cr-parts { display: grid; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
+.cr-parts li { display: flex; align-items: center; gap: 8px; }
+.cr-parts li.done .ico { color: var(--ok); margin: 0; }
+.cr-done p { margin: 0 0 8px; }
+.ai-review { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.ai-review h3 { margin: 0 0 8px; font-size: 13px; }
+.ai-findings { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ai-findings li { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.ai-findings p { margin: 0 0 6px; }
+.ai-findings .sev { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; background: var(--panel-2); color: var(--muted); }
+.ai-findings .sev-high .sev { background: var(--danger-soft); color: var(--danger); }
+.ai-findings .sev-medium .sev { background: var(--warn-soft); color: var(--warn); }

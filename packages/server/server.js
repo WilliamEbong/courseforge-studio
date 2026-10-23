@@ -13,6 +13,7 @@ import { query } from '../core/index.js';
 import { emptyCourse } from '../schema/index.js';
 import * as io from '../cli/io.js';
 import { createAssistant, fakeProvider } from '../ai/assistant.js';
+import { createFlow } from '../ai/create.js';
 
 const PACKAGES = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const EDITOR = path.join(PACKAGES, 'editor');
@@ -91,6 +92,14 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
   // AI settings and usage live with the app's data (the desktop passes its userData); CF_AI_FAKE replays a test script.
   const fake = process.env.CF_AI_FAKE ? fakeProvider(JSON.parse(fs.readFileSync(process.env.CF_AI_FAKE, 'utf8'))) : undefined;
   const assistant = createAssistant({ root, dataDir: dataDir ?? path.join(root, '.courseforge'), provider: aiProvider ?? fake });
+  const creator = createFlow({ root, dataDir: dataDir ?? path.join(root, '.courseforge'), settings: assistant.settings, provider: aiProvider ?? fake });
+  /** NDJSON: progress lines, then {type:'done', ...result} or {type:'error', errors}. */
+  const stream = async (res, work) => {
+    res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' });
+    const send = (o) => res.write(JSON.stringify(o) + '\n');
+    try { send({ type: 'done', ...(await work(send)) }); } catch (e) { send({ type: 'error', errors: e.errors ?? [{ path: '/', code: 'internal', message: e.message }] }); }
+    res.end();
+  };
   const tokenBuf = Buffer.from(token);
   const okToken = (t) => { if (typeof t !== 'string') return false; const b = Buffer.from(t); return b.length === tokenBuf.length && crypto.timingSafeEqual(b, tokenBuf); };
   const watchers = new Map(); // course file -> { clients:Set<res>, listener }
@@ -173,6 +182,8 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       const body = await readJson(req);
       return json(res, 200, { ok: true, ...assistant.settings.set(body ?? {}) });
     }
+    if (p === '/ai/outline') { only(req, 'POST'); const body = await readJson(req); return stream(res, () => creator.outline(body ?? {})); }
+    if (p === '/ai/build') { only(req, 'POST'); const body = await readJson(req); return stream(res, (send) => creator.build({ ...(body ?? {}), onEvent: send })); }
     if (p === '/courses') {
       if (req.method === 'GET') {
         const courses = fs.readdirSync(root).filter((f) => /\.story$|\.course\.json$/i.test(f) && NAME.test(f.replace(/\.story$|\.course\.json$/i, ''))).map((f) => {
@@ -258,13 +269,10 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       const body = await readJson(req);
       if (q === 'apply') return json(res, 200, { ...assistant.apply(String(body?.draftId ?? '')), ...state(file, load(file)) });
       if (q === 'discard') return json(res, 200, assistant.discard(String(body?.draftId ?? '')));
+      if (q === 'review') return stream(res, () => creator.review({ file }));
       if (q !== 'ask') throw notFound();
       if (body?.focus !== undefined && typeof body.focus !== 'string') throw fail(400, '/focus', 'type', 'focus must be a string');
-      res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' });
-      const send = (o) => res.write(JSON.stringify(o) + '\n');
-      try { send({ type: 'done', card: await assistant.ask({ file, prompt: body?.prompt, focus: body?.focus, onEvent: send }) }); }
-      catch (e) { send({ type: 'error', errors: e.errors ?? [{ path: '/', code: 'internal', message: e.message }] }); }
-      return res.end();
+      return stream(res, async (send) => ({ card: await assistant.ask({ file, prompt: body?.prompt, focus: body?.focus, onEvent: send }) }));
     }
     if (op === 'query') {
       only(req, 'GET');
