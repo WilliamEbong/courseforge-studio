@@ -727,6 +727,8 @@ export function createRuntime(docIn, opts = {}) {
   const slideIx = new Map(order.map((id, i) => [id, i]));
   const allSlideIx = new Map(doc.slides.map((s, i) => [s.id, i]));
   const enc = (list) => list.map((id) => slideIx.get(id) ?? id); // slide ids as indexes into the slide order
+  // Three base-36 characters from a question's choice ids: a compact order (indexes) restores only onto the same choices.
+  const choicePrint = (ids) => { let h = 0; for (const ch of ids.join('|')) h = (h * 31 + ch.codePointAt(0)) >>> 0; return (h % 46656).toString(36).padStart(3, '0'); };
   function snapshot() {
     const saved = Object.fromEntries(Object.entries(S.saved).filter(([sid]) => slideById.has(sid) && resumes(slideById.get(sid))).map(([sid, st]) => [sid, compact(sid, st)]));
     const bankSlides = (k) => bankById.get(slideById.get(k).draw.bank).slides;
@@ -749,9 +751,9 @@ export function createRuntime(docIn, opts = {}) {
       snap.q = Object.fromEntries(Object.entries(S.q).map(([sid, q]) => {
         const extra = { ...(q.text ? { t: q.text } : {}), ...(q.point ? { p: { ...q.point } } : {}),
           ...(Object.keys(q.placed ?? {}).length ? { d: { ...q.placed } } : {}), ...(Object.keys(q.matched ?? {}).length ? { m: { ...q.matched } } : {}) };
-        // Choice order as one base-36 digit per choice ("" = authored order); id lists stay readable on restore.
+        // Choice order as one base-36 digit per choice ("" = authored order) plus ".<choicePrint>"; id lists stay readable on restore.
         const ids = slideById.get(sid).question.choices.map((c) => c.id);
-        const ord = ids.length > 36 ? [...q.order] : q.order.every((id, i) => id === ids[i]) ? '' : q.order.map((id) => ids.indexOf(id).toString(36)).join('');
+        const ord = ids.length > 36 ? [...q.order] : `${q.order.every((id, i) => id === ids[i]) ? '' : q.order.map((id) => ids.indexOf(id).toString(36)).join('')}.${choicePrint(ids)}`;
         return [allSlideIx.get(sid), [ord, q.selected.map(id => q.order.indexOf(id)), q.attempts, q.result === 'correct' ? 1 : q.result === 'incorrect' ? 2 : 0,
           ...(Object.keys(extra).length ? [extra] : [])]];
       }));
@@ -833,7 +835,9 @@ export function createRuntime(docIn, opts = {}) {
       let qs = raw;
       if (snap.v === 2 && Array.isArray(raw)) {
         const choices = slideById.get(sid)?.question?.choices ?? [];
-        const order = Array.isArray(raw[0]) ? raw[0] : raw[0] === '' ? choices.map((c) => c.id) : typeof raw[0] === 'string' ? [...raw[0]].map((d) => choices[parseInt(d, 36)]?.id) : [];
+        const [digits, print] = typeof raw[0] === 'string' ? raw[0].split('.') : [];
+        const same = print === choicePrint(choices.map((c) => c.id)); // else the course changed since the snapshot: dropped below
+        const order = Array.isArray(raw[0]) ? raw[0] : !same ? [] : digits === '' ? choices.map((c) => c.id) : [...digits].map((d) => choices[parseInt(d, 36)]?.id);
         const extra = isObj(raw[4]) ? raw[4] : {};
         qs = { order, selected: Array.isArray(raw[1]) ? raw[1].filter(i => Number.isInteger(i) && i >= 0 && i < order.length).map(i => order[i]) : [],
           attempts: raw[2], result: raw[3] === 1 ? 'correct' : raw[3] === 2 ? 'incorrect' : null, text: extra.t, point: extra.p, placed: extra.d, matched: extra.m };

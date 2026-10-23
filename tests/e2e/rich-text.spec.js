@@ -59,7 +59,9 @@ test('format selection, commit once, reload, preview and publish', async ({ page
   await page.getByRole('button', { name: 'Link', exact: true }).click();
   await page.getByLabel('Link URL').fill('javascript:alert(1)');
   await page.getByRole('button', { name: 'Add link' }).click();
+  await expect(page.getByRole('dialog', { name: 'Add a link' })).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: 'Use an https:' })).toBeVisible();
+  await expect(page.getByLabel('Link URL')).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('Link URL').fill('https://example.com/learn');
   await page.getByRole('button', { name: 'Add link' }).click();
   expect(io.history.depth(file).undo).toBe(before);

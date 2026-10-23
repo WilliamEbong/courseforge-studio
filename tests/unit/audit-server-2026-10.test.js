@@ -55,6 +55,15 @@ test('listing courses twice does not reopen unchanged .story packages', async ()
   } finally { reads.mock.restore(); }
 });
 
+test('a course that failed to load once (file locked, offline) is retried by the next listing', async () => {
+  fs.writeFileSync(path.join(root, 'flaky.story'), writeStory({ title: 'flaky', text: 'Hello' }));
+  const list = async () => (await (await fetch(`${base}/api/courses`, { headers: { 'x-cf-token': TOKEN } })).json()).courses.find((c) => c.name === 'flaky');
+  const real = fs.readFileSync;
+  const busy = mock.method(fs, 'readFileSync', function (f, ...rest) { if (/flaky\.story$/.test(String(f))) throw Object.assign(new Error('busy'), { code: 'EBUSY' }); return real.call(this, f, ...rest); });
+  try { assert.equal((await list()).invalid, true); } finally { busy.mock.restore(); }
+  assert.equal((await list()).title, 'flaky');
+});
+
 test('an AI draft left unapplied (course switched, page reloaded) is swept by a later request', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cf-audit-ai-')), file = path.join(dir, 'demo.course.json');
   fs.copyFileSync(SAMPLE, file);

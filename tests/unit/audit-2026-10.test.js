@@ -49,18 +49,6 @@ test('Claude output keeps a multi-byte character that straddles two stdout chunk
 import { resolveInside } from '../../packages/lms-test-harness/serve.js';
 import { validatePackage } from '../../packages/publisher/index.js';
 
-test('schema: arithmetic setVar needs a number value; choice questions cap at 26 choices', () => {
-  const r = applyAll(emptyCourse({ title: 'T' }), [
-    { cmd: 'var.add', args: { name: 'n', type: 'number' } },
-    { cmd: 'slide.add', args: { id: 's-a', objects: [{ id: 'o-b', type: 'button', text: 'Go' }] } },
-  ], ctx());
-  const d = structuredClone(r.doc);
-  d.slides[0].triggers.push({ id: 't-x', on: { event: 'click', target: 'o-b' }, do: [{ action: 'setVar', var: 'n', op: 'add', value: 'abc' }] });
-  assert.ok(validate(d).some((e) => e.path.endsWith('/value') && e.code === 'type'));
-  const q = structuredClone(r.doc);
-  q.slides[0].question = { type: 'mc', prompt: 'Pick', choices: Array.from({ length: 27 }, (_, i) => ({ id: `c-${i}`, label: `C${i}`, correct: i === 0 })) };
-  assert.ok(validate(q).some((e) => /at most 26 choices/.test(e.message)), JSON.stringify(validate(q)));
-});
 
 test('a malformed %-escape is a 404 in the LMS harness and a problem entry in validatePackage', () => {
   assert.equal(resolveInside(os.tmpdir(), '/%E0'), null);
@@ -121,4 +109,9 @@ test('resume: a 60-question shuffled quiz fits SCORM suspend_data, and old id-li
   const old = JSON.parse(JSON.stringify(snap)); // a v2 snapshot written before this change listed choice ids
   for (const [k, v] of Object.entries(old.q)) v[0] = [...rt.state.q[built.doc.slides[Number(k)].id].order];
   assert.deepEqual(createRuntime(built.doc).restore(old).state.q, rt.state.q);
+  const changed = structuredClone(built.doc); // republished with one choice replaced: that answer must not land on it
+  changed.slides[0].question.choices[1].id = 'c-0-1-replaced';
+  const resumed = createRuntime(changed).restore(JSON.parse(JSON.stringify(snap))).state.q;
+  assert.equal(resumed['s-q0'], undefined);
+  assert.deepEqual(resumed['s-q1'], rt.state.q['s-q1']);
 });

@@ -196,12 +196,12 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
           let hit = listed.get(file);
           if (hit?.stamp !== stamp) {
             hit = { stamp, title: null, cover: null };
-            try { const doc = io.loadCourse(file); hit.title = doc.title; hit.cover = coverOf(doc); } catch { /* listed as unreadable */ }
-            listed.set(file, hit);
+            try { const doc = io.loadCourse(file); hit.title = doc.title; hit.cover = coverOf(doc); listed.set(file, hit); } catch { /* listed as unreadable; retried next time (a lock or offline file may clear) */ }
           }
           const { title, cover } = hit;
           return { name: f.replace(/\.story$|\.course\.json$/i, ''), file: f, format: io.isStory(f) ? 'story' : 'json', title, rev: io.revision(file), cover, ...(title === null ? { invalid: true } : {}) };
         });
+        for (const file of listed.keys()) if (!courses.some((c) => path.join(root, c.file) === file)) listed.delete(file); // deleted or renamed
         return json(res, 200, { ok: true, courses });
       }
       const body = await readJson(req);
