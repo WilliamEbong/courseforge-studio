@@ -219,7 +219,7 @@ export const history = {
 };
 
 /** Load, apply commands atomically, save and record history. Returns applyAll's result (+rev). */
-export function runCommands(file, cmds, { create = false, emptyCourse, rng } = {}) {
+export function runCommands(file, cmds, { create = false, emptyCourse, rng, what } = {}) {
   let doc, initial;
   try { doc = loadCourse(file); } catch (e) {
     if (e.code === 'ENOENT' && create && emptyCourse) {
@@ -231,7 +231,7 @@ export function runCommands(file, cmds, { create = false, emptyCourse, rng } = {
   const r = applyAll(doc, cmds, { rng });
   if (!r.ok) return r;
   const { doc: after, hash, native } = saveValid(file, r.doc, initial, isStory(file));
-  history.record(file, doc, after, label(cmds), hash, native); // loadCourse and emptyCourse both return normalized documents
+  history.record(file, doc, after, what ?? label(cmds), hash, native); // loadCourse and emptyCourse both return normalized documents
   return { ...r, doc: after, rev: revision(file) };
 }
 

@@ -246,3 +246,13 @@ test('MCP SCORM publish forwards the optional ZIP flag and rejects invalid value
   assert.equal((await s.call('publish', { ...args, target: 'web', zip: true })).body.errors[0].path, '/zip');
   assert.equal(calls.length, 2);
 });
+
+test('--only locks an AI draft session to one course file', async () => {
+  const s = start({ only: 'draft.course.json' });
+  course(s, 'draft.course.json');
+  course(s, 'real.course.json');
+  assert.equal((await s.call('describe_course', { file: 'draft.course.json' })).isError, false);
+  const r = await s.call('run_commands', { file: 'real.course.json', commands: [{ cmd: 'course.set', args: { title: 'x' } }] });
+  assert.equal(r.isError, true);
+  assert.match(JSON.stringify(r.body), /may only use draft\.course\.json/);
+});

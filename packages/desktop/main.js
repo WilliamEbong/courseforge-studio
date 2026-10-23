@@ -28,7 +28,7 @@ let win = null;
 
 function startServer(root) {
   return new Promise((resolve, reject) => {
-    const server = createServer({ root, port: 0 });
+    const server = createServer({ root, port: 0, dataDir: app.getPath('userData') });
     server.once('listening', () => resolve(server));
     server.once('error', reject);
   });

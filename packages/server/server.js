@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { query } from '../core/index.js';
 import { emptyCourse } from '../schema/index.js';
 import * as io from '../cli/io.js';
+import { createAssistant, fakeProvider } from '../ai/assistant.js';
 
 const PACKAGES = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const EDITOR = path.join(PACKAGES, 'editor');
@@ -69,9 +70,12 @@ function readJson(req) {
 
 const shown = (f) => { const r = path.relative(process.cwd(), f); return (r.startsWith('..') || path.isAbsolute(r) ? f : r).split(path.sep).join('/'); };
 
-export function createServer({ root = 'courses', token = crypto.randomBytes(24).toString('base64url'), port = 8420 } = {}) {
+export function createServer({ root = 'courses', token = crypto.randomBytes(24).toString('base64url'), port = 8420, dataDir, aiProvider } = {}) {
   root = path.resolve(root);
   fs.mkdirSync(root, { recursive: true });
+  // AI settings and usage live with the app's data (the desktop passes its userData); CF_AI_FAKE replays a test script.
+  const fake = process.env.CF_AI_FAKE ? fakeProvider(JSON.parse(fs.readFileSync(process.env.CF_AI_FAKE, 'utf8'))) : undefined;
+  const assistant = createAssistant({ root, dataDir: dataDir ?? path.join(root, '.courseforge'), provider: aiProvider ?? fake });
   const tokenBuf = Buffer.from(token);
   const okToken = (t) => { if (typeof t !== 'string') return false; const b = Buffer.from(t); return b.length === tokenBuf.length && crypto.timingSafeEqual(b, tokenBuf); };
   const watchers = new Map(); // course file -> { clients:Set<res>, listener }
@@ -149,6 +153,11 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       const names = query(null, 'commands.list').data.map((c) => c.name);
       return json(res, 200, { ok: true, commands: names.map((name) => query(null, 'commands.help', { name }).data) });
     }
+    if (p === '/ai') { // AI status (Claude CLI found and signed in, settings, today's usage) and settings changes
+      if (req.method === 'GET') return json(res, 200, { ok: true, ...assistant.status() });
+      const body = await readJson(req);
+      return json(res, 200, { ok: true, ...assistant.settings.set(body ?? {}) });
+    }
     if (p === '/courses') {
       if (req.method === 'GET') {
         const courses = fs.readdirSync(root).filter((f) => /\.story$|\.course\.json$/i.test(f) && NAME.test(f.replace(/\.story$|\.course\.json$/i, ''))).map((f) => {
@@ -207,8 +216,8 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       try { r = io.importCourse(src, file); } catch (e) { throw Object.assign(e, { status: 400 }); }
       return json(res, 201, { ok: true, name: body.name, reportFile: shown(r.reportFile), summary: r.summary, ...state(file, load(file)) });
     }
-    const m = /^\/courses\/([^/]+)(?:\/(commands|undo|redo|publish|events|query)(?:\/([^/]+))?)?$/.exec(p);
-    if (!m || (m[2] === 'query') !== (m[3] !== undefined)) throw notFound();
+    const m = /^\/courses\/([^/]+)(?:\/(commands|undo|redo|publish|events|query|ai)(?:\/([^/]+))?)?$/.exec(p);
+    if (!m || ['query', 'ai'].includes(m[2]) !== (m[3] !== undefined)) throw notFound();
     const [, name, op, q] = m;
     const file = courseFile(name);
     if (!fs.existsSync(file)) throw fail(404, '/name', 'ref', `course "${name}" not found`, 'GET /api/courses lists the courses');
@@ -228,6 +237,19 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       const doc = io.history[op](file);
       if (!doc) throw fail(400, '/', 'history', `nothing to ${op}`);
       return json(res, 200, { ok: true, ...state(file, doc) });
+    }
+    if (op === 'ai') { // ask: NDJSON progress lines, then {type:'done', card} or {type:'error', errors}; apply/discard a draft
+      only(req, 'POST');
+      const body = await readJson(req);
+      if (q === 'apply') return json(res, 200, { ...assistant.apply(String(body?.draftId ?? '')), ...state(file, load(file)) });
+      if (q === 'discard') return json(res, 200, assistant.discard(String(body?.draftId ?? '')));
+      if (q !== 'ask') throw notFound();
+      if (body?.focus !== undefined && typeof body.focus !== 'string') throw fail(400, '/focus', 'type', 'focus must be a string');
+      res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' });
+      const send = (o) => res.write(JSON.stringify(o) + '\n');
+      try { send({ type: 'done', card: await assistant.ask({ file, prompt: body?.prompt, focus: body?.focus, onEvent: send }) }); }
+      catch (e) { send({ type: 'error', errors: e.errors ?? [{ path: '/', code: 'internal', message: e.message }] }); }
+      return res.end();
     }
     if (op === 'query') {
       only(req, 'GET');

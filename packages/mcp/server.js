@@ -17,8 +17,9 @@ const FILE_ONLY = obj({ file: FILE }, ['file']);
 const err = (path, code, message, hint) => Object.assign(new Error(message), { errors: [{ path, code, message, ...(hint && { hint }) }] });
 const rpcErr = (code, message, data) => Object.assign(new Error(message), { rpc: { code, message, ...(data && { data }) } });
 
-export function createServer({ core, runtime, io, publisher = null, importer = null, root, stdin, stdout }) {
+export function createServer({ core, runtime, io, publisher = null, importer = null, root, only = null, stdin, stdout }) {
   root = resolve(root);
+  const onlyFile = only && resolve(root, only); // an AI draft session may touch this one file and nothing else
 
   const at = (p, key) => {
     const abs = resolve(root, p);
@@ -26,6 +27,7 @@ export function createServer({ core, runtime, io, publisher = null, importer = n
     if (!rel || rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)) {
       throw err(`/${key}`, 'path', `${key} must be inside the courses root`, 'use a relative path such as "demo.course.json", without ".."');
     }
+    if (onlyFile && abs !== onlyFile) throw err(`/${key}`, 'path', `this session may only use ${only}`, `pass file "${only}"`);
     return abs; // ponytail: no realpath, so a symlink planted inside root could escape; agents cannot create symlinks.
   };
 
@@ -243,6 +245,7 @@ if (import.meta.main) { // Node >= 24.2 (verified on 24.14)
   const i = process.argv.indexOf('--root');
   const root = resolve(i > 0 ? process.argv[i + 1] : 'courses');
   mkdirSync(root, { recursive: true });
+  const o = process.argv.indexOf('--only');
   const [core, schema, runtime, io, publisher, importer] = await Promise.all([
     import('../core/index.js'),
     import('../schema/index.js'),
@@ -253,6 +256,6 @@ if (import.meta.main) { // Node >= 24.2 (verified on 24.14)
   ]);
   // core.query returns {ok, data}; the server expects data (or {ok:false, errors} to pass through).
   const query = (doc, name, args) => { const r = core.query(doc, name, args); return r.ok ? r.data : r; };
-  createServer({ core: { ...core, query, emptyCourse: schema.emptyCourse }, runtime, io, publisher, importer, root, stdin: process.stdin, stdout: process.stdout });
+  createServer({ core: { ...core, query, emptyCourse: schema.emptyCourse }, runtime, io, publisher, importer, root, only: o > 0 ? process.argv[o + 1] : null, stdin: process.stdin, stdout: process.stdout });
   process.stderr.write(`courseforge-studio mcp: stdio server ready, root ${root}\n`);
 }
