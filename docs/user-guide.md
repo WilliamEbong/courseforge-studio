@@ -4,7 +4,7 @@ This guide shows how to build and publish courses with CourseForge Studio. It st
 
 **Contents**
 
-1. [Open CourseForge Studio](#1-open-courseforge-studio)
+1. [Install and open CourseForge Studio](#1-install-and-open-courseforge-studio)
 2. [A tour of the window](#2-a-tour-of-the-window)
 3. [Your first course in ten minutes](#3-your-first-course-in-ten-minutes)
 4. [Slides and scenes](#4-slides-and-scenes)
@@ -23,29 +23,40 @@ This guide shows how to build and publish courses with CourseForge Studio. It st
 17. [Take your work into Storyline 360](#17-take-your-work-into-storyline-360)
 18. [Saving, undo and recovery](#18-saving-undo-and-recovery)
 19. [Keyboard shortcuts](#19-keyboard-shortcuts)
-20. [Working with an AI assistant](#20-working-with-an-ai-assistant)
+20. [Claude, your AI assistant](#20-claude-your-ai-assistant)
 21. [Troubleshooting](#21-troubleshooting)
 
 ---
 
-## 1. Open CourseForge Studio
+## 1. Install and open CourseForge Studio
 
-Double-click **CourseForge Studio** on the desktop or in the Start menu. The program opens in its own window and works without an internet connection. Closing the window quits it.
+**Install.**
+1. Download `CourseForge-Studio-Setup-<version>.exe` from the [Releases page](https://github.com/WilliamEbong/courseforge-studio/releases/latest).
+2. Double-click it. It installs for your Windows account only: there is no administrator prompt and nothing else to install.
+3. The installer adds **CourseForge Studio** to the desktop and the Start menu, then opens the program.
+
+> The installer is not code-signed yet, so Windows SmartScreen may say it "protected your PC" the first time. Click **More info**, then **Run anyway**.
+
+**Open.** Double-click **CourseForge Studio** on the desktop or in the Start menu. The program opens in its own window and works without an internet connection. Opening it a second time brings the open window to the front. Closing the window quits it.
 
 Your courses are kept in **Documents\CourseForge Studio**. The first time you open the program, that folder gets two sample courses:
 
 - **Lab Safety Essentials**, a slide course with layers, triggers, variables and a quiz.
 - **Lab Basics**, a lessons course that scrolls like a web page.
 
-![The Courses screen](images/courses.png)
+![The start screen](images/courses.png)
 
-The Courses screen lists every course in the folder. From here you can:
+The start screen shows every course in the folder as a small picture of its first slide. From here you can:
 
-- **Open** a course by clicking its name.
-- **Create** a course: choose **Slides** or **Lessons**, type a file name (lowercase letters, digits and dashes, for example `safety-101`) and a title, then click **Create course**. Slides default to native `.story` storage; choose JSON for the full CF feature set. Lessons use `.course.json`.
-- **Import a Storyline file**: see [section 16](#16-bring-in-a-storyline-360-project).
+- **Open** a course by clicking it.
+- **Create with AI**: describe the course, optionally attach documents, and Claude drafts it for you to review. See [section 20](#20-claude-your-ai-assistant).
+- **From an outline**: paste headings and bullet points; each heading becomes a scene with slides.
+- **Blank course**: choose **Slides** or **Lessons**, type a file name (lowercase letters, digits and dashes, for example `safety-101`) and a title, then click **Create course**. Courses are saved as `.course.json` files; you can choose Storyline's `.story` format for slide courses instead.
+- **Open a .story file**: see [section 16](#16-bring-in-a-storyline-360-project).
 
-> **First time on a new computer?** CourseForge Studio needs Node.js 24 or later, which you can get from [nodejs.org](https://nodejs.org). To add the desktop and Start menu shortcuts, run `launcher\install-shortcuts.ps1` once with PowerShell. If the program cannot start, a message box tells you why.
+**Updates.** When a new version is published, CourseForge Studio downloads it in the background and asks whether to **Restart to update**. Your courses are never changed by an update.
+
+**Remove.** Open Windows **Settings > Apps > Installed apps**, find **CourseForge Studio** and choose **Uninstall**. Your courses stay in Documents\CourseForge Studio until you delete them yourself.
 
 ## 2. A tour of the window
 
@@ -53,7 +64,7 @@ The Courses screen lists every course in the folder. From here you can:
 
 | Area | What it is for |
 |---|---|
-| **Header** (top) | **Courses** takes you back to the course list. Next to the course name, a status says whether your last change is saved. **Undo** and **Redo** come next, then **From outline**, **Check**, **Preview**, and **Publish** (Web, SCORM 1.2, Storyline). **Command log** and **Agent** are for working with AI assistants. **?** lists the keyboard shortcuts. |
+| **Header** (top) | **Courses** takes you back to the start screen. Next to the course name, a status says whether your last change is saved. **Undo** and **Redo** come next, then **From outline**, **Check**, **Preview**, and **Publish** (Web, SCORM 1.2, Storyline). **Ask Claude** opens the AI assistant (Ctrl+I). **Command log** and **Agent** show your edits as commands for other AI tools. **?** lists the keyboard shortcuts. |
 | **Slides** (left) | Every scene and its slides, in order. Click a slide to edit it. Use the arrows to reorder scenes, and drag slides to reorder them or move them to another scene. **+ Slide**, **+ Draw** and **+ Scene** add new ones. |
 | **Insert bar** (above the canvas) | Adds text, shapes, buttons, hotspots, text inputs, images, sliders, dials, video, audio and markers to the slide. Also holds zoom, copy, paste, duplicate, the layer you are editing, and the Timeline switch. |
 | **Canvas** (centre) | The slide itself. Click an object to select it. |
@@ -64,7 +75,7 @@ The editor is laid out for windows at least 1024 pixels wide. In a narrower wind
 
 ## 3. Your first course in ten minutes
 
-1. On the Courses screen, choose **Slides**, type `my-first-course` as the file name and `My first course` as the title, then click **Create course**.
+1. On the start screen, under **New course**, choose **Slides**, type `my-first-course` as the file name and `My first course` as the title, then click **Create course**.
 2. Select the initial slide (or click **+ Slide** if the course is empty). In the inspector's **Slide** tab, give it a title such as *Welcome*.
 3. Click **Text** in the Insert bar. Type your welcome message in the **Text** box in the Properties tab, then click anywhere outside the box to save it.
 4. Click **Image**. Click **Choose file…**, pick a picture from your computer and describe it in **Alt text**. Click **Insert image**. (Or open the **Library** tab and pick one of the built-in pictures.)
@@ -229,7 +240,7 @@ A lessons course is an outline of sections and lessons that learners scroll thro
 
 ## 13. Themes and the image library
 
-- **Player style** (Course tab) selects Modern or Classic. New `.story` courses select Modern. CF uses its responsive charcoal presentation for Modern; explicit theme colours take precedence. Imported native player colours and controls remain preserved in the file, but CF does not reproduce every native setting.
+- **Player style** (Course tab) selects Modern or Classic. New `.story` courses select Modern. CourseForge Studio uses its responsive charcoal presentation for Modern; explicit theme colours take precedence. Imported native player colours and controls remain preserved in the file, but CourseForge Studio does not reproduce every native setting.
 - **Theme** (Course tab) sets the player's colours and font for learners. There are six presets: Default (Modern uses charcoal; otherwise follows the learner's light or dark setting), Light, Charcoal, Ocean, Forest and High contrast. Every preset meets WCAG AA contrast.
 - **Library** (in the Image dialog) holds original pictures you can use freely in your courses.
 
@@ -275,8 +286,8 @@ Learners can use the course with the keyboard alone, and with a screen reader. Q
 
 Import creates a new course and leaves the source file unchanged. Opening an existing `.story` already in your courses folder edits that file directly.
 
-1. On the Courses screen, under **Import a Storyline file**, click **Choose file…** and pick the `.story` file. It is copied into your courses folder.
-2. Check the course name (lowercase letters, digits and dashes), choose native `.story` or conversion to JSON, and click **Import**. Native keeps the source archive's unedited content; JSON conversion retains the mapped CF model.
+1. On the start screen, under **Import a .story file**, click **Choose file…** and pick the `.story` file. It is copied into your courses folder.
+2. Check the course name (lowercase letters, digits and dashes), choose native `.story` or conversion to JSON, and click **Import**. Native keeps the source archive's unedited content; JSON conversion keeps the mapped course model.
 3. The new course opens. Next to it, `<name>.import-report.json` lists anything that could not come across exactly. Each entry says what it is, where it is and why.
 
 **What comes across:**
@@ -293,7 +304,7 @@ Import creates a new course and leaves the source file unchanged. Opening an exi
 **What to check after import:**
 - Approximations are listed in the report as `heuristic`. Examples are block arrows drawn as plain arrows and gradient fills turned into solid colours.
 - Some formatting cannot come across, including paragraph spacing and unusual list markers. On Windows, EMF pictures are rendered to PNG for display and publishing; the original media remains in the native archive. Failed conversions are reported.
-- Supported text boxes shrink their displayed text to fit while retaining the authored font size. You can edit their text, but CF cannot yet resize fitted native text boxes. Converted vector and table graphics are display-only in native files.
+- Supported text boxes shrink their displayed text to fit while retaining the authored font size. You can edit their text, but CourseForge Studio cannot yet resize fitted native text boxes. Converted vector and table graphics are display-only in native files.
 - Supported slide-count and quiz completion settings and LMS reporting statuses are imported. Unsupported tracking and player options are reported; check completion, scoring and resume in your LMS.
 
 Native support is experimental. Full-course compatibility with Storyline 360 has not yet been verified. Review the report and keep your original file.
@@ -341,16 +352,45 @@ Press **?** (outside a text field) for the full list.
 
 ![Keyboard shortcuts](images/shortcuts.png)
 
-## 20. Working with an AI assistant
+## 20. Claude, your AI assistant
 
-Everything you can do in the editor, an AI assistant can do too, through the same commands. Assistants connect through the `cf` command line, a local web interface or MCP. **Command log** shows each change you make as a command. **Agent** shows how an assistant would make the same change. When an assistant edits an open course, you see the change straight away. For setup and the full command list, see the [agent guide](agent-guide.md) and the [command reference](commands.md).
+CourseForge Studio uses **Claude Code** on your computer, signed in with your own Claude account, so there is no key to paste and nothing extra to pay for beyond your Claude plan. AI is off until you turn it on.
+
+**Set up (once).**
+1. Install Claude Code from [claude.com/claude-code](https://claude.com/claude-code).
+2. Open Windows Terminal, type `claude`, press Enter, then type `/login` and sign in in your browser.
+3. In CourseForge Studio, click **Set up Claude** on the start screen (or the gear in the Claude panel). The three checks turn green: installed, signed in, turned on.
+
+![AI settings](images/ai-settings.png)
+
+In the same dialog you choose the model (**Fast**, **Balanced** or **Best**) and a **daily request limit** (100 by default). Today's use is shown underneath. **What Claude sees** explains exactly what is sent: your request, the open course, and any document you attach.
+
+**Ask for a change.** Open a course and click **Ask Claude** (Ctrl+I). Type what you want in your own words, for example *Add alt text to every image* or *Rewrite this slide in plainer language*, and press **Send** (Ctrl+Enter). With **About slide …** ticked, "this slide" means the slide you are on.
+
+Claude works on a copy of your course. When it finishes, a **change card** shows what it did, the exact lines that changed (green added, red removed) and the commands it ran. Click **Apply** to make the change, or **Discard** to throw it away. An applied change is one step: **Undo** reverses it. If you edit the course while Claude is working, Apply is refused so nothing you did is overwritten; ask again.
+
+![A change card](images/assistant.png)
+
+**Create a course with AI.** On the start screen, click **Create with AI**:
+1. **Brief**: say what the course should teach and who it is for, pick a length and a type, and attach source documents if you have them (Word, PDF, Markdown or text).
+2. **Outline**: Claude drafts an outline sized to the length you picked. Edit the title, the file name and any line of the outline, or click **Draft again**.
+3. **Build**: Claude builds the course one scene or section at a time. The new course appears on the start screen only when it is complete. If building stops (for example at your daily limit), click **Continue building**: finished parts are kept.
+
+![Creating a course with AI](images/create-ai.png)
+
+**Review a course.** In the Claude panel, click **Review course**. Claude reads the whole course and lists up to ten things to fix, most important first. **Fix with Claude** sends a finding to the assistant, which proposes the fix as a change card.
+
+**Other AI tools.** Everything you can do in the editor, other assistants can do through the same commands, using the `cf` command line, a local web interface or MCP. **Command log** shows each change you make as a command; **Agent** shows how an assistant would make the same change. See the [agent guide](agent-guide.md) and the [command reference](commands.md).
 
 ## 21. Troubleshooting
 
 | Problem | What to do |
 |---|---|
-| A message says CourseForge Studio could not start | Read the reason in the message. If another program is using the port, close it, or start CourseForge Studio from a terminal with `npm run cf -- app --port 8480`. The details are saved in `%LOCALAPPDATA%\CourseForge Studio\last-error.txt`. |
-| "CourseForge Studio needs Node.js" | Install Node.js 24 or later from nodejs.org, then open CourseForge Studio again. |
+| A message says CourseForge Studio could not start | Read the reason in the message and follow its advice. The details are saved in `%APPDATA%\CourseForge Studio\logs\main.log`. |
+| Windows says it "protected your PC" when installing | Click **More info**, then **Run anyway**. The installer is not code-signed yet. |
+| "Claude Code is not installed" or "not signed in" | Follow the steps in [section 20](#20-claude-your-ai-assistant), then click **Check again** in AI settings. |
+| Claude says it is busy or at its usage limit | Wait a few minutes and try again. Your course was not changed. |
+| "You have used today's AI requests" | The limit resets at midnight (UTC). You can raise it in AI settings. |
 | The window feels cramped | Make it wider. Below 1024 pixels, the editor scrolls sideways. |
 | A change shows **Not saved** | Read the message beside the field, correct the value and leave the field again. |
 | Fonts look different for learners | Use fonts installed on learners' computers. Fonts are not embedded. |

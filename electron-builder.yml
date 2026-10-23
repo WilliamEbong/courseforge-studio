@@ -27,3 +27,4 @@ publish:
   provider: github
   owner: WilliamEbong
   repo: courseforge-studio
+  releaseType: release

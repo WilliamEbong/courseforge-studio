@@ -1,5 +1,6 @@
 {
   "name": "courseforge-studio",
+  "productName": "CourseForge Studio",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -11,7 +12,8 @@
     "docs:commands": "node packages/cli/cf.js commands --markdown > docs/commands.md",
     "start": "electron .",
     "smoke": "electron . --smoke",
-    "dist": "electron-builder --win --publish never"
+    "dist": "electron-builder --win --publish never",
+    "screenshots": "node build/screenshots.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
