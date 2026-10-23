@@ -15,6 +15,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Create the release first (parallel uploads otherwise race to create it and lose files)
+        shell: bash
+        run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "CourseForge Studio ${GITHUB_REF_NAME#v}" --notes "Download CourseForge-Studio-Setup-${GITHUB_REF_NAME#v}.exe below and double-click it. See the README for what's new and how to turn on Claude."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the installer and publish it to the GitHub release
         run: npx electron-builder --win --publish always
         env:
