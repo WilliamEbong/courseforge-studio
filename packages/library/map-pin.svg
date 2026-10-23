@@ -1,0 +1,6 @@
+<!-- CourseForge Studio library: original artwork drawn for CourseForge Studio. Licence: MIT (see LICENSE at the repository root and packages/library/LICENSE.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <ellipse cx="120" cy="218" rx="42" ry="9" fill="#d9dee7"/>
+  <path d="M120 216C120 216 52 146 52 92C52 52 82 22 120 22C158 22 188 52 188 92C188 146 120 216 120 216Z" fill="#d1495b" stroke="#1f2a44" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="120" cy="92" r="28" fill="#ffffff" stroke="#1f2a44" stroke-width="8"/>
+</svg>

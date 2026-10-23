@@ -1,0 +1,8 @@
+<!-- CourseForge Studio library: original artwork drawn for CourseForge Studio. Licence: MIT (see LICENSE at the repository root and packages/library/LICENSE.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <circle cx="120" cy="120" r="96" fill="#3d6fb6" stroke="#1f2a44" stroke-width="8"/>
+  <g fill="#ffffff">
+    <circle cx="120" cy="70" r="14"/>
+    <rect x="107" y="100" width="26" height="80" rx="9"/>
+  </g>
+</svg>

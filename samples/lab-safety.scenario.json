@@ -1,0 +1,31 @@
+{
+  "description": "Full learner walkthrough of the Lab Safety sample: name input, gated PPE exploration, one risky branch then the safe branch, quiz with a try-again, pass.",
+  "events": [
+    { "type": "input", "target": "o-w-name", "text": "Sam" },
+    { "type": "click", "target": "o-w-start" },
+    { "type": "next" },
+    { "type": "next" },
+    { "type": "click", "target": "o-lh-close" },
+    { "type": "click", "target": "o-p-goggles" },
+    { "type": "click", "target": "o-p-gloves" },
+    { "type": "click", "target": "o-p-coat" },
+    { "type": "next" },
+    { "type": "click", "target": "o-s-b" },
+    { "type": "click", "target": "o-sr-retry" },
+    { "type": "click", "target": "o-s-a" },
+    { "type": "click", "target": "o-sg-report" },
+    { "type": "choose", "choice": "b" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "choose", "choice": "a" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "choose", "choice": "a" }, { "type": "choose", "choice": "b" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "choose", "choice": "f" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "input", "answer": true, "text": "Spill Kit" }, { "type": "submit" }, { "type": "continue" }
+  ],
+  "expect": {
+    "slide": "s-results",
+    "status": "passed",
+    "layers": ["l-pass"],
+    "vars": { "learner": "Sam", "tabsSeen": 3, "safeChoices": 1, "reportedSpill": true, "qz-final.scorePercent": 100, "qz-final.passed": true },
+    "traceOrder": ["enter s-welcome", "enter s-ppe", "layer+ l-help", "layer- l-help", "var tabsSeen=3", "enter s-spill", "enter s-spill-risky", "enter s-spill", "enter s-spill-good", "enter s-q1", "submit s-q1 tryAgain", "submit s-q1 correct", "enter s-results", "quiz qz-final submit 100 passed", "layer+ l-pass"],
+    "lms": ["status passed", "score 100"]
+  }
+}

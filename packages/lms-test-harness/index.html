@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock SCORM 1.2 LMS</title>
+<style>
+  :root { --bg: #f6f5f2; --fg: #1d1d1b; --muted: #6b6a66; --line: #d9d6cf; --accent: #0b6e6e; }
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--fg); display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+  header { display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+  #rec { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 12px ui-monospace, monospace; color: var(--muted); }
+  header strong { color: var(--accent); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
+  iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  #log { overflow: auto; border-left: 1px solid var(--line); font: 12px/1.35 ui-monospace, monospace; padding: 8px; margin: 0; white-space: pre-wrap; }
+  button { font: inherit; padding: 4px 10px; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr 30vh; } #log { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <strong>Mock LMS (SCORM 1.2)</strong>
+  <span id="launch" class="muted"></span>
+  <button id="relaunch" type="button">Exit &amp; relaunch</button>
+  <button id="reset" type="button">Reset learner record</button>
+  <span id="rec"></span>
+</header>
+<main>
+  <iframe id="sco" title="Course content"></iframe>
+  <pre id="log" aria-live="off" aria-label="SCORM call log"></pre>
+</main>
+<script type="module">
+import { createScorm12Api } from './scorm12.js';
+
+const params = new URLSearchParams(location.search);
+const KEY = 'mocklms:' + (params.get('course') || 'default');
+const LOGKEY = KEY + ':log';
+const store = {
+  load: () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
+  save: (r) => { try { localStorage.setItem(KEY, JSON.stringify(r)); } catch {} },
+};
+const logEl = document.getElementById('log');
+window.__lmsLog = (() => { try { return JSON.parse(localStorage.getItem(LOGKEY)) || []; } catch { return []; } })();
+const render = () => {
+  logEl.textContent = window.__lmsLog.map((e) => `${e.session ?? ''} ${e.fn}(${e.args.map((a) => JSON.stringify(a)).join(', ')}) -> ${JSON.stringify(e.ret)}${e.err ? ' err=' + e.err : ''}`).join('\n');
+  logEl.scrollTop = logEl.scrollHeight;
+  document.getElementById('rec').textContent = 'record: ' + JSON.stringify(window.API?._record?.() ?? store.load());
+};
+let session = 0;
+function mountApi() {
+  session++;
+  window.API = createScorm12Api(store, (e) => {
+    window.__lmsLog.push({ ...e, session });
+    try { localStorage.setItem(LOGKEY, JSON.stringify(window.__lmsLog)); } catch {}
+    render();
+  });
+}
+
+async function launchHref() {
+  if (params.get('launch')) return params.get('launch');
+  const xml = await (await fetch('/imsmanifest.xml')).text();
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  const item = [...doc.getElementsByTagName('item')].find((i) => i.getAttribute('identifierref'));
+  const res = [...doc.getElementsByTagName('resource')].find((r) => r.getAttribute('identifier') === item.getAttribute('identifierref'));
+  const base = res.getAttribute('xml:base') || '';
+  return '/' + base + res.getAttribute('href');
+}
+
+async function launch() {
+  mountApi();
+  const href = await launchHref();
+  document.getElementById('launch').textContent = href;
+  document.getElementById('sco').src = href;
+  render();
+}
+document.getElementById('relaunch').onclick = () => {
+  // Like an LMS closing the SCO window: unload content (SCO should call LMSFinish on unload), then relaunch.
+  document.getElementById('sco').src = 'about:blank';
+  setTimeout(launch, 300);
+};
+document.getElementById('reset').onclick = () => { localStorage.removeItem(KEY); localStorage.removeItem(LOGKEY); window.__lmsLog = []; launch(); };
+launch();
+</script>
+</body>
+</html>

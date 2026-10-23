@@ -1,0 +1,288 @@
+/* CourseForge Studio learner player. Original design: neutral chrome, one ink-blue accent, system fonts, no external assets.
+   Theme tokens are CSS variables; doc.player.theme {name: value} overrides --cf-<name>. */
+.cf-player {
+  --cf-bg: #eeeeea;
+  --cf-surface: #fbfbf9;
+  --cf-ink: #1c1f24;
+  --cf-muted: #555a62;
+  --cf-line: #d3d3cc;
+  --cf-accent: #34449c;
+  --cf-accent-ink: #ffffff;
+  --cf-accent-soft: #e4e7f6;
+  --cf-focus: #c2410c;
+  --cf-ok: #1d6b41;
+  --cf-bad: #a3281f;
+  --cf-warn: #8a5300;
+  /* The stage keeps light defaults in both schemes: authored slide colors assume them. */
+  --cf-stage-bg: #ffffff;
+  --cf-stage-ink: #1c1f24;
+  --cf-stage-accent: #34449c;
+  --cf-stage-line: #c9cbd3;
+  --cf-stage-focus: #c2410c;
+  --cf-stage-muted: #555a62;
+  --cf-stage-ok: #1d6b41;
+  --cf-stage-bad: #a3281f;
+  --cf-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 280px;
+  background-color: var(--cf-bg);
+  color: var(--cf-ink);
+  font: 16px/1.4 var(--cf-font);
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-color-scheme: dark) {
+  .cf-player {
+    --cf-bg: #121418;
+    --cf-surface: #1b1e24;
+    --cf-ink: #ecebe6;
+    --cf-muted: #a8acb4;
+    --cf-line: #343943;
+    --cf-accent: #aab7ff;
+    --cf-accent-ink: #111427;
+    --cf-accent-soft: #262c4c;
+    --cf-focus: #ffb27a;
+    --cf-ok: #7fd3a2;
+    --cf-bad: #ff9b91;
+    --cf-warn: #f3c46b;
+  }
+}
+.cf-player *, .cf-player *::before, .cf-player *::after { box-sizing: border-box; }
+.cf-player [hidden] { display: none !important; }
+.cf-sr { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- chrome ---------- */
+.cf-shell { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.cf-bar, .cf-nav { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background-color: var(--cf-surface); }
+.cf-bar { border-bottom: 1px solid var(--cf-line); min-height: 52px; }
+.cf-nav { border-top: 1px solid var(--cf-line); justify-content: flex-end; }
+.cf-title { margin: 0; flex: 1; min-width: 0; font-size: 1rem; font-weight: 650; letter-spacing: .005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-where { display: flex; align-items: baseline; gap: 12px; min-width: 0; color: var(--cf-muted); }
+.cf-slide-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 36vw; }
+.cf-progress { font-variant-numeric: tabular-nums; font-size: .875rem; padding: 2px 8px; border: 1px solid var(--cf-line); border-radius: 999px; }
+.cf-body { position: relative; display: flex; flex: 1; min-height: 0; }
+.cf-main { display: flex; flex: 1; min-width: 0; }
+
+.cf-btn, .cf-icon-btn, .cf-menu-item { font: inherit; color: inherit; cursor: pointer; }
+.cf-btn { min-height: 44px; min-width: 96px; padding: 0 18px; border-radius: 10px; border: 1.5px solid var(--cf-line); background-color: var(--cf-surface); font-weight: 600; }
+.cf-btn:hover:not(:disabled) { border-color: var(--cf-accent); }
+.cf-btn.cf-primary { background-color: var(--cf-accent); color: var(--cf-accent-ink); border-color: transparent; }
+.cf-btn.cf-primary:hover:not(:disabled) { filter: brightness(1.12); }
+.cf-btn:disabled { opacity: .45; cursor: not-allowed; }
+.cf-icon-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--cf-line); border-radius: 10px; background-color: transparent; font-weight: 600; }
+.cf-icon-btn[aria-expanded="true"] { background-color: var(--cf-accent-soft); }
+.cf-btn:focus-visible, .cf-icon-btn:focus-visible, .cf-menu-item:focus-visible { outline: 3px solid var(--cf-focus); outline-offset: 2px; }
+
+/* ---------- menu ---------- */
+.cf-menu { flex: none; width: 264px; overflow: auto; padding: 8px 8px 16px; background-color: var(--cf-surface); border-right: 1px solid var(--cf-line); }
+.cf-menu h2 { margin: 14px 10px 6px; font-size: .75rem; font-weight: 650; text-transform: uppercase; letter-spacing: .07em; color: var(--cf-muted); }
+.cf-menu ul { list-style: none; margin: 0; padding: 0; }
+.cf-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: 0; border-radius: 8px; background-color: transparent; text-align: left; }
+.cf-menu-item:hover { background-color: var(--cf-accent-soft); }
+.cf-menu-item[aria-current="page"] { background-color: var(--cf-accent-soft); font-weight: 650; box-shadow: inset 3px 0 0 var(--cf-accent); }
+.cf-menu-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-menu-group-title { display: block; padding: 9px 12px 3px; color: var(--cf-muted); }
+.cf-menu-group > ul { margin-left: 12px; border-left: 1px solid var(--cf-line); }
+.cf-check { color: var(--cf-ok); font-weight: 700; }
+@media (max-width: 760px) {
+  .cf-menu { position: absolute; z-index: 5; top: 0; bottom: 0; left: 0; width: min(300px, 85vw); box-shadow: 0 12px 32px rgba(0, 0, 0, .25); }
+  .cf-slide-title { display: none; }
+  .cf-bar, .cf-nav { padding: 8px 12px; }
+  .cf-btn { min-width: 0; flex: 1; }
+}
+
+/* ---------- stage ---------- */
+.cf-viewport { position: relative; flex: 1; min-width: 0; min-height: 0; display: grid; place-items: center; padding: 16px; overflow: hidden; }
+.cf-frame { position: relative; overflow: hidden; border-radius: 6px; background-color: var(--cf-stage-bg); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 10px 30px rgba(0, 0, 0, .12); }
+.cf-stage { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; background-color: var(--cf-stage-bg); color: var(--cf-stage-ink); font: 24px/1.3 var(--cf-font); }
+.cf-stage:focus { outline: none; }
+/* The stage (and a docked question card) stays light in every scheme: focus rings and secondary text use stage
+   colours there, not the chrome's (review 005 #6: pale dark-scheme focus on white was 1.5-1.8:1). */
+.cf-stage, .cf-qbox { --cf-focus: var(--cf-stage-focus); --cf-muted: var(--cf-stage-muted); }
+.cf-layer, .cf-qbox { position: absolute; inset: 0; pointer-events: none; }
+.cf-layer.cf-modal { pointer-events: auto; background-color: rgba(18, 20, 24, .45); }
+
+.cf-obj { position: absolute; display: flex; align-items: flex-start; justify-content: flex-start; margin: 0; padding: 4px; border: 0 solid transparent; background-color: transparent; color: inherit; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; pointer-events: auto; }
+.cf-obj:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-shape { background-color: #dfe3f2; align-items: center; justify-content: center; text-align: center; }
+.cf-shape-line, .cf-shape-arrow { padding: 0; background-color: transparent; overflow: visible; }
+button.cf-obj { align-items: center; justify-content: center; text-align: center; cursor: pointer; }
+.cf-button { padding: 8px 16px; border-radius: 10px; background-color: var(--cf-stage-accent); color: #ffffff; font-weight: 600; }
+.cf-button:hover:not(:disabled) { filter: brightness(1.12); }
+.cf-hotspot { padding: 0; background-color: transparent; }
+.cf-hotspot:hover:not(:disabled) { background-color: rgba(52, 68, 156, .08); }
+button.cf-obj:disabled { cursor: not-allowed; }
+.cf-button:disabled, [role="button"][aria-disabled="true"] { opacity: .55; }
+.cf-layer[inert] button.cf-obj:disabled { opacity: 1; }
+[role="button"].cf-obj { cursor: pointer; }
+img.cf-obj { display: block; padding: 0; object-fit: fill; user-select: none; }
+input.cf-obj { padding: 0 14px; border: 2px solid #6b7080; border-radius: 8px; background-color: #ffffff; color: var(--cf-stage-ink); }
+input.cf-obj:focus-visible { border-color: var(--cf-stage-accent); }
+
+/* ---------- media ---------- */
+video.cf-obj, audio.cf-obj { display: block; padding: 0; background-color: #000000; object-fit: contain; }
+audio.cf-obj { background-color: transparent; }
+video.cf-obj[role="button"] { cursor: pointer; }
+video.cf-obj:focus-visible, audio.cf-obj:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+video::cue { font-size: 28px; }
+.cf-cc-mark { display: inline-block; padding: 0 4px; border: 1.5px solid currentColor; border-radius: 4px; font-size: .75rem; font-weight: 700; }
+.cf-cc[aria-pressed="true"] { background-color: var(--cf-accent-soft); border-color: var(--cf-accent); }
+.cf-start { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background-color: rgba(18, 20, 24, .55); }
+.cf-start-btn { min-height: 56px; padding: 0 32px; font-size: 1.15rem; }
+
+/* ---------- markers ---------- */
+.cf-marker { padding: 0; background-color: transparent !important; border-width: 0 !important; } /* the round button is the marker */
+.cf-marker.cf-open { z-index: 5; }
+.cf-marker-btn { width: 100%; height: 100%; margin: 0; padding: 0; border: 3px solid #ffffff; border-radius: 50%; background-color: var(--cf-stage-accent); color: #ffffff; font: 700 30px/1 var(--cf-font); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.cf-marker-btn:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-marker-btn[aria-expanded="true"] { background-color: var(--cf-stage-ink); }
+.cf-marker-btn:disabled { opacity: .55; cursor: not-allowed; }
+.cf-marker-label { position: absolute; left: calc(100% + 12px); top: 0; width: 360px; padding: 16px 20px; border: 1px solid var(--cf-stage-line); border-radius: 12px; background-color: #ffffff; color: var(--cf-stage-ink); box-shadow: 0 8px 28px rgba(0, 0, 0, .2); font-size: 22px; line-height: 1.35; white-space: pre-wrap; cursor: default; }
+.cf-label-left .cf-marker-label { left: auto; right: calc(100% + 12px); }
+.cf-marker-title { margin: 0 0 6px; font-weight: 700; }
+.cf-marker-text { margin: 0; }
+
+/* ---------- slider and dial ---------- */
+input.cf-obj.cf-slider { -webkit-appearance: none; appearance: none; padding: 0; border: 0; border-radius: 0; background-color: transparent; cursor: pointer; touch-action: none; }
+.cf-slider::-webkit-slider-runnable-track { height: 10px; border-radius: 5px; background-color: var(--cf-stage-line); }
+.cf-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: -12px; border: 3px solid #ffffff; border-radius: 50%; background-color: var(--cf-stage-accent); box-shadow: 0 1px 5px rgba(0, 0, 0, .35); }
+.cf-slider::-moz-range-track { height: 10px; border-radius: 5px; background-color: var(--cf-stage-line); }
+.cf-slider::-moz-range-thumb { width: 28px; height: 28px; border: 3px solid #ffffff; border-radius: 50%; background-color: var(--cf-stage-accent); }
+input.cf-obj.cf-slider:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-slider:disabled, .cf-dial:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.cf-dial { padding: 0; border: 4px solid #6b7080; border-radius: 50%; background-color: #eef0f8; cursor: grab; touch-action: none; }
+.cf-dial:has(input:focus-visible) { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-dial-pointer { position: absolute; left: 50%; top: 8%; width: 8px; height: 42%; margin-left: -4px; border-radius: 4px; background-color: var(--cf-stage-accent); transform-origin: 50% 100%; pointer-events: none; }
+.cf-dial-hub { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background-color: var(--cf-stage-ink); pointer-events: none; }
+.cf-dial-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; pointer-events: none; }
+
+/* ---------- questions (course coordinates; the stage scales them) ---------- */
+.cf-question { position: absolute; left: 8%; right: 8%; top: 12%; max-height: 80%; overflow: auto; padding: 32px 40px; pointer-events: auto; border: 1px solid var(--cf-stage-line); border-radius: 18px; background-color: #ffffff; color: var(--cf-stage-ink); box-shadow: 0 8px 28px rgba(28, 31, 36, .1); }
+.cf-question fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.cf-question legend { padding: 0; margin-bottom: 22px; font-size: 32px; font-weight: 650; line-height: 1.25; }
+.cf-choice { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; padding: 14px 20px; border: 2px solid var(--cf-stage-line); border-radius: 12px; font-size: 26px; cursor: pointer; }
+.cf-choice:hover { border-color: var(--cf-stage-accent); }
+.cf-choice:has(input:checked) { border-color: var(--cf-stage-accent); background-color: #eceefa; }
+.cf-choice:has(input:focus-visible) { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-choice input { flex: none; width: 26px; height: 26px; margin: 0; accent-color: var(--cf-stage-accent); }
+.cf-choice input:focus-visible { outline: none; }
+fieldset:disabled .cf-choice { cursor: default; }
+fieldset:disabled .cf-choice:hover { border-color: var(--cf-stage-line); }
+.cf-question.cf-authored { inset: 0; max-height: none; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; pointer-events: none; }
+.cf-authored fieldset { position: absolute; inset: 0; }
+.cf-authored legend, .cf-authored .cf-choice { position: absolute; margin: 0; padding: 0; box-sizing: border-box; }
+.cf-authored .cf-choice { border: 0; border-radius: 0; pointer-events: auto; }
+.cf-authored .cf-choice:has(input:checked) { background: transparent; }
+.cf-answer { width: 100%; padding: 14px 18px; border: 2px solid #6b7080; border-radius: 10px; font: inherit; font-size: 26px; color: var(--cf-stage-ink); background-color: #ffffff; }
+.cf-answer:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+/* Small stage (phones, narrow tablets): form questions sit under the scaled slide at reading size (T5 audit). */
+.cf-viewport.cf-docked { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 12px; overflow: auto; }
+.cf-docked > .cf-frame { flex: none; }
+.cf-docked > .cf-qbox { position: static; inset: auto; width: 100%; max-width: 640px; pointer-events: auto; }
+.cf-docked .cf-question { position: static; max-height: none; padding: 16px; border-radius: 12px; }
+.cf-docked .cf-question legend { margin-bottom: 12px; font-size: 1.125rem; }
+.cf-docked .cf-choice { gap: 12px; min-height: 48px; margin-bottom: 8px; padding: 10px 14px; font-size: 1rem; }
+.cf-docked .cf-choice input { width: 20px; height: 20px; }
+.cf-docked .cf-answer { padding: 12px 14px; font-size: 1rem; }
+.cf-docked .cf-match { grid-template-columns: 1fr; gap: 6px; font-size: 1rem; }
+.cf-docked .cf-match select { min-height: 44px; }
+.cf-docked .cf-seq-item { min-height: 48px; font-size: 1rem; }
+.cf-docked .cf-seq-btn { font-size: 1rem; }
+
+/* ---------- hotspot and drag-and-drop questions: the slide stays visible under a prompt banner ---------- */
+.cf-qbanner { position: absolute; z-index: 2; left: 0; right: 0; top: 0; margin: 0; padding: 16px 32px; border-bottom: 1px solid var(--cf-stage-line); background-color: rgba(255, 255, 255, .94); color: var(--cf-stage-ink); font-size: 30px; font-weight: 650; line-height: 1.25; pointer-events: auto; }
+.cf-hs-surface { position: absolute; inset: 0; cursor: crosshair; pointer-events: auto; }
+.cf-hs-surface:focus-visible { outline: 5px solid var(--cf-focus); outline-offset: -5px; }
+.cf-hs-surface[aria-disabled="true"] { cursor: default; pointer-events: none; }
+.cf-hs-marker { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 4px solid #ffffff; border-radius: 50%; background-color: var(--cf-stage-accent); box-shadow: 0 0 0 3px var(--cf-stage-accent), 0 2px 10px rgba(0, 0, 0, .45); pointer-events: none; }
+.cf-hs-cursor { display: none; position: absolute; width: 48px; height: 48px; margin: -24px 0 0 -24px; border: 3px dashed var(--cf-focus); border-radius: 50%; pointer-events: none; }
+.cf-hs-surface:focus-visible .cf-hs-cursor { display: block; }
+
+.cf-draggable { cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.cf-dragging { z-index: 10; cursor: grabbing; box-shadow: 0 12px 28px rgba(0, 0, 0, .3); }
+.cf-grabbed { outline: 4px dashed var(--cf-focus); outline-offset: 3px; }
+.cf-droppable { outline: 3px dashed var(--cf-stage-accent); outline-offset: -3px; }
+
+/* matching rows and sequence lists */
+.cf-match { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 18px; margin-bottom: 12px; font-size: 26px; }
+.cf-match select { width: 100%; padding: 10px 14px; border: 2px solid #6b7080; border-radius: 10px; background-color: #ffffff; color: var(--cf-stage-ink); font: inherit; }
+.cf-match select:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 3px; }
+.cf-seq { list-style: none; margin: 0; padding: 0; counter-reset: cf-seq; }
+.cf-seq-item { position: relative; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 10px 14px; border: 2px solid var(--cf-stage-line); border-radius: 12px; background-color: #ffffff; font-size: 26px; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.cf-seq-item::before { counter-increment: cf-seq; content: counter(cf-seq) "."; min-width: 1.6em; color: var(--cf-muted); font-variant-numeric: tabular-nums; }
+.cf-seq-label { flex: 1; min-width: 0; }
+.cf-seq-btn { min-width: 48px; min-height: 44px; border: 1.5px solid var(--cf-stage-line); border-radius: 8px; background-color: #f4f5f8; color: var(--cf-stage-ink); font: inherit; font-size: 22px; cursor: pointer; }
+.cf-seq-btn:disabled { opacity: .35; cursor: default; }
+.cf-seq-btn:focus-visible { outline: 4px solid var(--cf-focus); outline-offset: 2px; }
+fieldset:disabled .cf-seq-item { cursor: default; }
+
+/* ---------- quiz review: words, icons and colour together, never colour alone ---------- */
+.cf-review { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 16px; border-bottom: 1px solid var(--cf-line); background-color: var(--cf-accent-soft); color: var(--cf-ink); }
+.cf-review-text { flex: 1 1 280px; min-width: 0; }
+.cf-review-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-bottom: 2px; }
+.cf-review-status { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 1px 12px; border: 2px solid currentColor; border-radius: 999px; font-weight: 700; }
+.cf-review-status[data-result="correct"] { color: var(--cf-ok); }
+.cf-review-status[data-result="incorrect"] { color: var(--cf-bad); }
+.cf-review-where { margin: 0; color: var(--cf-muted); font-variant-numeric: tabular-nums; }
+.cf-review-line { margin: 0; overflow-wrap: anywhere; }
+.cf-review .cf-btn { flex: none; }
+.cf-tags { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.cf-tag { padding: 2px 10px; border: 2px solid currentColor; border-radius: 999px; background-color: #ffffff; font-size: .75em; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.cf-tag-ok { color: var(--cf-stage-ok); }
+.cf-tag-bad { color: var(--cf-stage-bad); }
+.cf-question .cf-choice.cf-rv-ok { border-color: var(--cf-stage-ok); }
+.cf-question .cf-choice.cf-rv-bad { border-color: var(--cf-stage-bad); border-style: dashed; }
+.cf-choice:has(input[aria-disabled="true"]), .cf-match select[aria-disabled="true"] { cursor: default; }
+.cf-match .cf-tags { grid-column: 1 / -1; margin-left: 0; }
+.cf-seq-item .cf-tags { margin-left: 0; }
+.cf-obj.cf-rv-ok { outline: 4px solid var(--cf-stage-ok); outline-offset: 3px; }
+.cf-obj.cf-rv-bad { outline: 4px dashed var(--cf-stage-bad); outline-offset: 3px; }
+.cf-hs-area { position: absolute; border: 4px dashed var(--cf-stage-ok); border-radius: 6px; pointer-events: none; }
+.cf-hs-area.cf-hs-ellipse { border-radius: 50%; }
+.cf-hs-area > span { position: absolute; left: -4px; bottom: 100%; padding: 2px 8px; border-radius: 6px; background-color: #ffffff; color: var(--cf-stage-ok); font-size: 20px; font-weight: 700; white-space: nowrap; }
+.cf-answer[readonly] { background-color: #f4f5f8; }
+
+/* ---------- dialogs ---------- */
+.cf-dialog { width: min(440px, calc(100vw - 32px)); padding: 26px 28px 22px; border: 1px solid var(--cf-line); border-radius: 16px; background-color: var(--cf-surface); color: var(--cf-ink); font: 16px/1.45 var(--cf-font); box-shadow: 0 24px 64px rgba(0, 0, 0, .3); }
+.cf-dialog::backdrop { background-color: rgba(12, 14, 18, .55); }
+.cf-dialog h2 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.cf-dialog p { margin: 10px 0 0; color: var(--cf-muted); }
+.cf-dialog-head { display: flex; align-items: center; gap: 12px; }
+.cf-fb-icon { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font-weight: 700; background-color: var(--cf-accent-soft); color: var(--cf-accent); }
+.cf-dialog[data-kind="correct"] h2, .cf-dialog[data-kind="correct"] .cf-fb-icon { color: var(--cf-ok); }
+.cf-dialog[data-kind="incorrect"] h2, .cf-dialog[data-kind="incorrect"] .cf-fb-icon { color: var(--cf-bad); }
+.cf-dialog[data-kind="tryAgain"] h2, .cf-dialog[data-kind="tryAgain"] .cf-fb-icon { color: var(--cf-warn); }
+.cf-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cf-btn, .cf-menu-item, .cf-choice { transition: background-color .15s ease, border-color .15s ease, filter .15s ease; }
+  .cf-dialog[open] { animation: cf-rise .18s ease-out; }
+  @keyframes cf-rise { from { opacity: 0; transform: translateY(8px); } }
+  /* entrance/exit effects. Fade is linear; Fly In is a cubic ease-out from just outside the stage. */
+  .cf-obj[data-anim] { animation: none var(--cf-anim-dur) linear var(--cf-anim-delay) both; }
+  .cf-obj[data-anim="enter-fade"] { animation-name: cf-in-fade; }
+  .cf-obj[data-anim="exit-fade"] { animation-name: cf-out-fade; }
+  .cf-obj[data-anim="enter-fly"] { animation-name: cf-in-fly; animation-timing-function: cubic-bezier(.33, 1, .68, 1); }
+  .cf-obj[data-anim="exit-fly"] { animation-name: cf-out-fly; animation-timing-function: cubic-bezier(.32, 0, .67, 0); }
+  .cf-obj[data-anim="enter-grow"] { animation-name: cf-in-grow; animation-timing-function: ease-out; }
+  .cf-obj[data-anim="exit-grow"] { animation-name: cf-out-grow; animation-timing-function: ease-in; }
+  .cf-obj[data-anim="enter-zoom"] { animation-name: cf-in-zoom; animation-timing-function: ease-out; }
+  .cf-obj[data-anim="exit-zoom"] { animation-name: cf-out-zoom; animation-timing-function: ease-in; }
+  @keyframes cf-in-fade { from { opacity: 0; } }
+  @keyframes cf-out-fade { to { opacity: 0; } }
+  @keyframes cf-in-fly { from { translate: var(--cf-fly-x) var(--cf-fly-y); } }
+  @keyframes cf-out-fly { to { translate: var(--cf-fly-x) var(--cf-fly-y); } }
+  @keyframes cf-in-grow { from { scale: 0; } }
+  @keyframes cf-out-grow { to { scale: 0; } }
+  @keyframes cf-in-zoom { from { scale: .3; opacity: 0; } }
+  @keyframes cf-out-zoom { to { scale: .3; opacity: 0; } }
+}
+@media (forced-colors: active) {
+  .cf-menu-item[aria-current="page"] { outline: 2px solid CanvasText; }
+  .cf-layer.cf-modal { background-color: transparent; }
+}
+
+/* Built-in Selected state has a visible default look (the vendor draws a glow); author state styles still apply. */
+.cf-obj[data-state="selected"] { box-shadow: 0 0 0 3px var(--cf-stage-accent), 0 0 14px 2px rgba(52, 68, 156, .45); }

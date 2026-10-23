@@ -1,0 +1,32 @@
+{
+  "name": "courseforge-studio",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "e2e": "playwright test",
+    "cf": "node packages/cli/cf.js",
+    "serve": "node packages/cli/cf.js serve",
+    "mcp": "node packages/cli/cf.js mcp",
+    "docs:commands": "node packages/cli/cf.js commands --markdown > docs/commands.md"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.56.1"
+  },
+  "bin": {
+    "cf": "packages/cli/cf.js"
+  },
+  "engines": {
+    "node": ">=24.2"
+  },
+  "version": "0.1.0",
+  "description": "AI-assisted e-learning authoring: slides, triggers, quizzes and lessons, published to Web and SCORM.",
+  "author": "William Ebong",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WilliamEbong/courseforge-studio.git"
+  },
+  "homepage": "https://github.com/WilliamEbong/courseforge-studio",
+  "private": true
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <!-- Original illustration for the CourseForge Studio lessons sample: a lab bench with goggles, a flask, a spill kit and an eyewash station. -->
+  <rect width="800" height="450" fill="#e9edf3"/>
+  <rect x="0" y="300" width="800" height="150" fill="#cfd6e0"/>
+  <rect x="40" y="286" width="720" height="22" rx="4" fill="#3d4a63"/>
+  <rect x="70" y="308" width="14" height="120" fill="#3d4a63"/>
+  <rect x="716" y="308" width="14" height="120" fill="#3d4a63"/>
+  <!-- eyewash station -->
+  <rect x="640" y="70" width="90" height="130" rx="10" fill="#2f7d5b"/>
+  <circle cx="665" cy="120" r="14" fill="#ffffff"/>
+  <circle cx="705" cy="120" r="14" fill="#ffffff"/>
+  <rect x="655" y="160" width="60" height="12" rx="6" fill="#bfe3d2"/>
+  <!-- goggles -->
+  <path d="M120 250 q0 -30 40 -30 h20 q12 0 16 10 q4 -10 16 -10 h20 q40 0 40 30 q0 30 -40 30 h-20 q-16 0 -20 -14 q-4 14 -20 14 h-12 q-40 0 -40 -30z" fill="#34449c"/>
+  <ellipse cx="166" cy="250" rx="24" ry="18" fill="#bcd2f5"/>
+  <ellipse cx="226" cy="250" rx="24" ry="18" fill="#bcd2f5"/>
+  <!-- flask -->
+  <path d="M376 150 h48 v50 l46 76 q6 12 -8 12 h-124 q-14 0 -8 -12 l46 -76z" fill="#ffffff" stroke="#3d4a63" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M352 256 l18 -30 h60 l18 30 q6 10 -6 10 h-84 q-12 0 -6 -10z" fill="#e39a3b"/>
+  <rect x="368" y="138" width="64" height="14" rx="5" fill="#3d4a63"/>
+  <!-- spill on the bench -->
+  <ellipse cx="520" cy="292" rx="52" ry="7" fill="#e39a3b" opacity=".85"/>
+  <!-- spill kit -->
+  <rect x="560" y="210" width="62" height="76" rx="8" fill="#c2410c"/>
+  <rect x="572" y="226" width="38" height="10" rx="3" fill="#ffffff"/>
+  <rect x="572" y="244" width="38" height="6" rx="3" fill="#f6c8ae"/>
+</svg>

@@ -1,0 +1,22 @@
+<!-- CourseForge Studio library: original artwork drawn for CourseForge Studio. Licence: MIT (see LICENSE at the repository root and packages/library/LICENSE.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <g stroke="#1f2a44" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="30" y="46" width="180" height="168" rx="14" fill="#ffffff"/>
+    <path d="M30 60Q30 46 44 46H196Q210 46 210 60V90H30Z" fill="#d1495b"/>
+    <rect x="70" y="28" width="14" height="36" rx="7" fill="#d9dee7"/>
+    <rect x="156" y="28" width="14" height="36" rx="7" fill="#d9dee7"/>
+  </g>
+  <g fill="#d9dee7">
+    <rect x="50" y="106" width="26" height="22" rx="4"/>
+    <rect x="86" y="106" width="26" height="22" rx="4"/>
+    <rect x="122" y="106" width="26" height="22" rx="4"/>
+    <rect x="158" y="106" width="26" height="22" rx="4"/>
+    <rect x="50" y="138" width="26" height="22" rx="4"/>
+    <rect x="86" y="138" width="26" height="22" rx="4"/>
+    <rect x="158" y="138" width="26" height="22" rx="4"/>
+    <rect x="50" y="170" width="26" height="22" rx="4"/>
+    <rect x="86" y="170" width="26" height="22" rx="4"/>
+    <rect x="122" y="170" width="26" height="22" rx="4"/>
+  </g>
+  <rect x="122" y="138" width="26" height="22" rx="4" fill="#f4b942" stroke="#1f2a44" stroke-width="4"/>
+</svg>

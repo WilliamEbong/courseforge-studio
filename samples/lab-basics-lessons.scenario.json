@@ -1,0 +1,49 @@
+{
+  "description": "Full learner walkthrough of the Lab Basics lessons sample: cover, every gate (one refused first), knowledge checks with a Take Again, sorting with a wrong pick, search, and the quiz passed at 75% with one wrong match.",
+  "events": [
+    { "type": "next" },
+    { "type": "end" },
+    { "type": "next" },
+    { "type": "item", "block": "b-p-acc", "index": 0 }, { "type": "item", "block": "b-p-acc", "index": 1 }, { "type": "item", "block": "b-p-acc", "index": 2 },
+    { "type": "continue", "block": "b-p-gate1" },
+    { "type": "item", "block": "b-p-tabs", "index": 1 }, { "type": "item", "block": "b-p-tabs", "index": 2 },
+    { "type": "continue", "block": "b-p-gate2" },
+    { "type": "item", "block": "b-p-cards", "index": 0 }, { "type": "item", "block": "b-p-cards", "index": 1 }, { "type": "item", "block": "b-p-cards", "index": 2 },
+    { "type": "continue", "block": "b-p-gate2" },
+    { "type": "choose", "block": "b-p-kc", "choice": "b" }, { "type": "submit", "block": "b-p-kc" },
+    { "type": "retry", "block": "b-p-kc" },
+    { "type": "choose", "block": "b-p-kc", "choice": "a" }, { "type": "submit", "block": "b-p-kc" },
+    { "type": "continue", "block": "b-p-gate3" },
+    { "type": "end" },
+    { "type": "next" },
+    { "type": "item", "block": "b-s-proc", "index": 0 }, { "type": "item", "block": "b-s-proc", "index": 1 }, { "type": "item", "block": "b-s-proc", "index": 2 }, { "type": "item", "block": "b-s-proc", "index": 3 },
+    { "type": "continue", "block": "b-s-gate" },
+    { "type": "item", "block": "b-s-lg", "index": 0 }, { "type": "item", "block": "b-s-lg", "index": 1 }, { "type": "item", "block": "b-s-lg", "index": 2 }, { "type": "item", "block": "b-s-lg", "index": 3 },
+    { "type": "sort", "block": "b-s-sort", "item": 1, "category": 0 }, { "type": "sort", "block": "b-s-sort", "item": 1, "category": 1 },
+    { "type": "sort", "block": "b-s-sort", "item": 0, "category": 0 }, { "type": "sort", "block": "b-s-sort", "item": 2, "category": 0 }, { "type": "sort", "block": "b-s-sort", "item": 3, "category": 1 },
+    { "type": "item", "block": "b-s-check", "index": 0 }, { "type": "item", "block": "b-s-check", "index": 1 },
+    { "type": "input", "block": "b-s-kc", "text": "Spill Kit" }, { "type": "submit", "block": "b-s-kc" },
+    { "type": "end" },
+    { "type": "search", "q": "eyewash" },
+    { "type": "next" },
+    { "type": "continue" },
+    { "type": "choose", "choice": "a" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "choose", "choice": "a" }, { "type": "choose", "choice": "b" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "input", "text": "Eyewash" }, { "type": "submit" }, { "type": "continue" },
+    { "type": "match", "left": 0, "right": 0 }, { "type": "match", "left": 1, "right": 2 }, { "type": "match", "left": 2, "right": 1 }, { "type": "submit" }, { "type": "continue" }
+  ],
+  "expect": {
+    "lesson": "l-quiz",
+    "status": "passed",
+    "traceOrder": [
+      "start", "enter l-welcome", "lesson l-welcome complete", "enter l-ppe", "complete b-p-acc", "gate b-p-gate1 passed",
+      "gate b-p-gate2 blocked b-p-cards", "complete b-p-cards", "gate b-p-gate2 passed", "kc b-p-kc incorrect", "retry b-p-kc", "kc b-p-kc correct",
+      "gate b-p-gate3 passed", "lesson l-ppe complete", "enter l-spill", "complete b-s-proc", "gate b-s-gate passed", "complete b-s-lg",
+      "sort b-s-sort 1 wrong", "complete b-s-sort", "complete b-s-check", "kc b-s-kc correct", "lesson l-spill complete", "search \"eyewash\" 2",
+      "enter l-quiz", "quiz l-quiz start 1", "submit q-heat correct", "submit q-spill correct", "submit q-kit correct", "submit q-match incorrect",
+      "quiz l-quiz 75 passed", "lesson l-quiz complete", "lms status passed"
+    ],
+    "notTrace": ["warn course has no lessons"],
+    "lms": ["interaction q-heat correct", "interaction q-match incorrect", "score 75", "status passed"]
+  }
+}

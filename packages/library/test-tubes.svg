@@ -1,0 +1,18 @@
+<!-- CourseForge Studio library: original artwork drawn for CourseForge Studio. Licence: MIT (see LICENSE at the repository root and packages/library/LICENSE.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <g stroke="#1f2a44" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M60 40V164A16 16 0 0 0 92 164V40Z" fill="#ffffff"/>
+    <path d="M104 40V164A16 16 0 0 0 136 164V40Z" fill="#ffffff"/>
+    <path d="M148 40V164A16 16 0 0 0 180 164V40Z" fill="#ffffff"/>
+    <path d="M60 132V164A16 16 0 0 0 92 164V132Z" fill="#d1495b"/>
+    <path d="M104 112V164A16 16 0 0 0 136 164V112Z" fill="#2a9d8f"/>
+    <path d="M148 148V164A16 16 0 0 0 180 164V148Z" fill="#f4b942"/>
+    <rect x="54" y="32" width="44" height="12" rx="5" fill="#eef2f7"/>
+    <rect x="98" y="32" width="44" height="12" rx="5" fill="#eef2f7"/>
+    <rect x="142" y="32" width="44" height="12" rx="5" fill="#eef2f7"/>
+    <rect x="34" y="128" width="12" height="70" fill="#c98a3a"/>
+    <rect x="194" y="128" width="12" height="70" fill="#c98a3a"/>
+    <rect x="30" y="104" width="180" height="24" rx="6" fill="#c98a3a"/>
+    <rect x="22" y="196" width="196" height="18" rx="6" fill="#c98a3a"/>
+  </g>
+</svg>

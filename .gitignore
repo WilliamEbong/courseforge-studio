@@ -1,0 +1,14 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.tmp/
+.build/
+.playwright-mcp/
+courses/
+*.history.json
+*.history/
+*.ai.json
+*.story
+!tests/fixtures/**/*.story
+.env

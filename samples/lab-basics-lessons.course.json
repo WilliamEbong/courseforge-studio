@@ -1,0 +1,432 @@
+{
+  "schema": "cf.course/1",
+  "id": "lab-basics",
+  "title": "Lab Basics",
+  "description": "Three short lessons on working safely at the bench, then a quiz. About fifteen minutes.",
+  "mode": "lessons",
+  "cover": {
+    "image": "a-bench"
+  },
+  "sections": [
+    {
+      "id": "sec-start",
+      "title": "Getting started",
+      "lessons": [
+        {
+          "id": "l-welcome",
+          "title": "Welcome to the lab",
+          "blocks": [
+            {
+              "type": "text",
+              "id": "b-w-intro",
+              "text": "Most lab accidents start with something small: a missing pair of goggles, a flask set down too close to the edge, a spill left for later.\n\nThis course walks through the habits that prevent them. Each lesson takes a few minutes, and you can come back to any of them from the outline."
+            },
+            {
+              "type": "imageText",
+              "id": "b-w-bench",
+              "image": "a-bench",
+              "text": "Everything on this bench has a job. Goggles and gloves protect you, the spill kit and eyewash station are there for when something goes wrong.",
+              "side": "right"
+            },
+            {
+              "type": "list",
+              "id": "b-w-goals",
+              "items": [
+                "Choose protective equipment for the task in front of you",
+                "Respond to a spill calmly and in the right order",
+                "Check what you learned in a short quiz"
+              ]
+            },
+            {
+              "type": "quote",
+              "id": "b-w-quote",
+              "text": "Safety is a habit you practise before you need it.",
+              "cite": "Lab induction notes"
+            },
+            {
+              "type": "button",
+              "id": "b-w-jump",
+              "label": "Already confident? Go to the quiz",
+              "text": "You can take the quiz at any time.",
+              "toLesson": "l-quiz"
+            }
+          ]
+        },
+        {
+          "id": "l-ppe",
+          "title": "Protective equipment",
+          "blocks": [
+            {
+              "type": "text",
+              "id": "b-p-intro",
+              "text": "Protective equipment only works when it is the right kind and worn the right way. Open each item to see when it matters."
+            },
+            {
+              "type": "accordion",
+              "id": "b-p-acc",
+              "items": [
+                {
+                  "title": "Safety goggles",
+                  "text": "Wear them whenever liquids are poured, heated or shaken, even for a quick task. Ordinary glasses do not seal at the sides."
+                },
+                {
+                  "title": "Gloves",
+                  "text": "Match the glove material to the chemical. Change gloves as soon as they are torn or contaminated, and never touch door handles or phones with them."
+                },
+                {
+                  "title": "Lab coat",
+                  "text": "Keep it buttoned and leave it in the lab, so whatever it caught does not travel home with you."
+                }
+              ]
+            },
+            {
+              "type": "continue",
+              "id": "b-p-gate1",
+              "require": "above"
+            },
+            {
+              "type": "tabs",
+              "id": "b-p-tabs",
+              "items": [
+                {
+                  "title": "Before",
+                  "text": "Read the label and the safety sheet. Put on goggles, gloves and coat before you open anything."
+                },
+                {
+                  "title": "During",
+                  "text": "Keep containers away from the bench edge and work with the smallest amount that does the job."
+                },
+                {
+                  "title": "After",
+                  "text": "Close and label containers, wipe the bench, then take gloves off last and wash your hands."
+                }
+              ]
+            },
+            {
+              "type": "flashcards",
+              "id": "b-p-cards",
+              "items": [
+                {
+                  "front": "Splash risk",
+                  "back": "Goggles, not glasses"
+                },
+                {
+                  "front": "Torn glove",
+                  "back": "Replace it straight away"
+                },
+                {
+                  "front": "Leaving the lab",
+                  "back": "Coat stays behind"
+                }
+              ]
+            },
+            {
+              "type": "continue",
+              "id": "b-p-gate2",
+              "label": "I have explored both",
+              "require": "allAbove"
+            },
+            {
+              "type": "heading",
+              "id": "b-p-head",
+              "text": "Check yourself"
+            },
+            {
+              "type": "question",
+              "id": "b-p-kc",
+              "kind": "mc",
+              "prompt": "You are about to heat a solution. Which item is essential?",
+              "choices": [
+                {
+                  "id": "a",
+                  "label": "Safety goggles",
+                  "correct": true,
+                  "feedback": "Right. Heated liquids can spit without warning."
+                },
+                {
+                  "id": "b",
+                  "label": "Sandals",
+                  "feedback": "Open shoes are never safe at the bench."
+                },
+                {
+                  "id": "c",
+                  "label": "A scarf",
+                  "feedback": "Loose clothing is a hazard near heat."
+                }
+              ]
+            },
+            {
+              "type": "continue",
+              "id": "b-p-gate3",
+              "require": "above"
+            },
+            {
+              "type": "text",
+              "id": "b-p-end",
+              "style": {
+                "padding": "normal",
+                "background": "#eef1f9"
+              },
+              "text": "Next, you will put these habits to work on a spill."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-practice",
+      "title": "Practice",
+      "lessons": [
+        {
+          "id": "l-spill",
+          "title": "Handling a spill",
+          "blocks": [
+            {
+              "type": "process",
+              "id": "b-s-proc",
+              "intro": "A beaker tips over and liquid spreads across the bench. Work through the response one step at a time.",
+              "items": [
+                {
+                  "title": "Warn",
+                  "text": "Tell the people around you, clearly and at once."
+                },
+                {
+                  "title": "Step back",
+                  "text": "Move out of splash range and keep others away."
+                },
+                {
+                  "title": "Assess",
+                  "text": "Identify the liquid from its label. Unknown or large spills go straight to your supervisor."
+                },
+                {
+                  "title": "Clean up",
+                  "text": "Use the spill kit, never paper towels, then report what happened."
+                }
+              ],
+              "summary": "Warn, step back, assess, clean up. In that order, every time."
+            },
+            {
+              "type": "continue",
+              "id": "b-s-gate",
+              "require": "above"
+            },
+            {
+              "type": "labeledGraphic",
+              "id": "b-s-lg",
+              "image": "a-bench",
+              "items": [
+                {
+                  "x": 24.5,
+                  "y": 55.5,
+                  "title": "Goggles",
+                  "text": "Within reach, not in a drawer."
+                },
+                {
+                  "x": 50,
+                  "y": 51,
+                  "title": "Flask",
+                  "text": "Set well back from the edge of the bench."
+                },
+                {
+                  "x": 74,
+                  "y": 55,
+                  "title": "Spill kit",
+                  "text": "Absorbent pads and neutralisers for small spills."
+                },
+                {
+                  "x": 85.6,
+                  "y": 30,
+                  "title": "Eyewash",
+                  "text": "Rinse for at least fifteen minutes if anything reaches your eyes."
+                }
+              ]
+            },
+            {
+              "type": "sorting",
+              "id": "b-s-sort",
+              "categories": [
+                "Do",
+                "Don't"
+              ],
+              "items": [
+                {
+                  "text": "Warn people nearby",
+                  "category": 0
+                },
+                {
+                  "text": "Wipe it up with paper towels",
+                  "category": 1
+                },
+                {
+                  "text": "Use the spill kit",
+                  "category": 0
+                },
+                {
+                  "text": "Leave it for the next person",
+                  "category": 1
+                }
+              ]
+            },
+            {
+              "type": "timeline",
+              "id": "b-s-tl",
+              "items": [
+                {
+                  "date": "0 s",
+                  "title": "Spill happens",
+                  "text": "Stop what you are doing."
+                },
+                {
+                  "date": "5 s",
+                  "title": "Warn and step back",
+                  "text": "Voice first, then distance."
+                },
+                {
+                  "date": "1 min",
+                  "title": "Clean up",
+                  "text": "Spill kit, gloves, goggles."
+                },
+                {
+                  "date": "10 min",
+                  "title": "Report",
+                  "text": "Write down what spilled and how."
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "id": "b-s-check",
+              "kind": "checkbox",
+              "items": [
+                "I know where the spill kit is",
+                "I know where the eyewash station is"
+              ]
+            },
+            {
+              "type": "question",
+              "id": "b-s-kc",
+              "kind": "fill",
+              "prompt": "What should you use to clean up a small spill? (two words)",
+              "answers": [
+                "spill kit",
+                "the spill kit"
+              ],
+              "feedback": {
+                "correct": "Yes, the spill kit.",
+                "incorrect": "Use the spill kit, never paper towels."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-check",
+      "title": "Check",
+      "lessons": [
+        {
+          "id": "l-quiz",
+          "title": "Final quiz",
+          "kind": "quiz",
+          "blocks": [
+            {
+              "type": "question",
+              "id": "q-heat",
+              "kind": "mc",
+              "prompt": "Which protects your eyes from splashes?",
+              "choices": [
+                {
+                  "id": "a",
+                  "label": "Safety goggles",
+                  "correct": true
+                },
+                {
+                  "id": "b",
+                  "label": "Prescription glasses"
+                },
+                {
+                  "id": "c",
+                  "label": "A face mask"
+                }
+              ],
+              "feedback": {
+                "correct": "Goggles seal at the sides.",
+                "incorrect": "Only goggles seal at the sides."
+              }
+            },
+            {
+              "type": "question",
+              "id": "q-spill",
+              "kind": "mr",
+              "prompt": "Select every correct first response to a spill.",
+              "choices": [
+                {
+                  "id": "a",
+                  "label": "Warn people nearby",
+                  "correct": true
+                },
+                {
+                  "id": "b",
+                  "label": "Step back",
+                  "correct": true
+                },
+                {
+                  "id": "c",
+                  "label": "Wipe it with your sleeve"
+                }
+              ]
+            },
+            {
+              "type": "question",
+              "id": "q-kit",
+              "kind": "fill",
+              "prompt": "Which station do you use if a chemical reaches your eyes?",
+              "answers": [
+                "eyewash",
+                "eyewash station",
+                "eye wash"
+              ]
+            },
+            {
+              "type": "question",
+              "id": "q-match",
+              "kind": "matching",
+              "prompt": "Match each item to its job.",
+              "pairs": [
+                {
+                  "left": "Goggles",
+                  "right": "Protect your eyes"
+                },
+                {
+                  "left": "Gloves",
+                  "right": "Protect your hands"
+                },
+                {
+                  "left": "Spill kit",
+                  "right": "Clean up small spills"
+                }
+              ]
+            }
+          ],
+          "passPercent": 75,
+          "attempts": 2
+        }
+      ]
+    }
+  ],
+  "tracking": {
+    "complete": [
+      {
+        "quiz": "l-quiz"
+      }
+    ],
+    "status": "passed-failed"
+  },
+  "assets": [
+    {
+      "id": "a-bench",
+      "path": "assets/lab-bench.svg",
+      "alt": "A lab bench with safety goggles, a flask of orange liquid, a small spill, a red spill kit and a green eyewash station."
+    }
+  ]
+}

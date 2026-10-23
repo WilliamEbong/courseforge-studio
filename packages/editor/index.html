@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CourseForge Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b6e6e'/%3E%3Ctext x='32' y='43' font-family='Segoe UI,Arial,sans-serif' font-size='28' font-weight='700' fill='%23fff' text-anchor='middle'%3ECF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/editor/editor.css">
+<link rel="stylesheet" href="/packages/player/cf-lessons.css">
+<link rel="stylesheet" href="/editor/lessons-view.css">
+<script type="module" src="/editor/editor.js"></script>
+</head>
+<body data-busy="0">
+<a class="skip" href="#stage" data-ui="skip">Skip to canvas</a>
+<div class="narrow" role="note">CourseForge Studio is laid out for windows 1024 pixels wide or more. Scroll sideways to reach every panel, or widen the window.</div>
+
+<header class="top">
+  <div class="brand"><span class="mark" aria-hidden="true">CF</span><span>Author</span></div>
+  <div class="course-only top-course">
+    <button id="btn-courses" type="button" data-ui="course.picker"><span class="ico" style="--ico: url(/editor/icons/courses.svg)" aria-hidden="true"></span>Courses</button>
+    <div class="course-name"><span id="course-title"></span><code id="course-file"></code></div>
+    <span id="save-status" class="save-status" role="status" aria-live="polite"></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="course-only tb" role="group" aria-label="History">
+    <button id="btn-undo" type="button" data-cmd="undo" aria-keyshortcuts="Control+Z Meta+Z"><span class="ico" style="--ico: url(/editor/icons/undo.svg)" aria-hidden="true"></span><span class="lbl">Undo</span></button>
+    <button id="btn-redo" type="button" data-cmd="redo" aria-keyshortcuts="Control+Y Control+Shift+Z Meta+Shift+Z"><span class="ico" style="--ico: url(/editor/icons/redo.svg)" aria-hidden="true"></span><span class="lbl">Redo</span></button>
+  </div>
+  <div class="course-only tb" role="group" aria-label="Preview and publish">
+    <button id="btn-outline" type="button" data-ui="outline" aria-haspopup="dialog"><span class="ico" style="--ico: url(/editor/icons/outline.svg)" aria-hidden="true"></span>From outline</button>
+    <button id="btn-check" type="button" data-cmd="query" data-query="a11y"><span class="ico" style="--ico: url(/editor/icons/check.svg)" aria-hidden="true"></span>Check</button>
+    <button id="btn-preview" type="button" data-ui="preview"><span class="ico" style="--ico: url(/editor/icons/preview.svg)" aria-hidden="true"></span>Preview</button>
+    <span class="tb-label" aria-hidden="true">Publish</span>
+    <button id="btn-pub-web" type="button" data-cmd="publish" data-target="web" aria-label="Publish Web"><span class="ico" style="--ico: url(/editor/icons/web.svg)" aria-hidden="true"></span>Web</button>
+    <button id="btn-pub-scorm" type="button" data-cmd="publish" data-target="scorm12" aria-label="Publish SCORM 1.2"><span class="ico" style="--ico: url(/editor/icons/scorm.svg)" aria-hidden="true"></span>SCORM 1.2</button>
+    <button id="btn-storyline-export" type="button" data-ui="export.storyline" aria-label="Export for Storyline" title="A PowerPoint deck and a question file that Storyline 360 imports"><span class="ico" style="--ico: url(/editor/icons/export.svg)" aria-hidden="true"></span>Storyline</button>
+  </div>
+  <div class="course-only tb" role="group" aria-label="Log, agents and help">
+    <button id="btn-log" type="button" data-ui="log" aria-expanded="false" aria-controls="drawer"><span class="ico" style="--ico: url(/editor/icons/log.svg)" aria-hidden="true"></span>Command log <span id="log-count" class="count"></span></button>
+    <button id="btn-agent" type="button" data-ui="agent"><span class="ico" style="--ico: url(/editor/icons/agent.svg)" aria-hidden="true"></span>Agent</button>
+    <button id="btn-keys" type="button" class="icon" data-ui="shortcuts" aria-label="Keyboard shortcuts (?)" title="Keyboard shortcuts (?)" aria-keyshortcuts="Shift+?">?</button>
+  </div>
+</header>
+
+<main id="picker" class="picker"></main>
+
+<main id="app" class="app" hidden>
+  <nav id="outline" class="outline" aria-label="Scenes and slides"></nav>
+  <section class="center" aria-label="Slide editor">
+    <div id="insertbar" class="toolbar" role="group" aria-label="Canvas tools">
+      <span class="tb-group" role="group" aria-label="Insert objects">
+        <span class="tb-label" aria-hidden="true">Insert</span>
+        <button type="button" data-cmd="object.add" data-type="text" aria-label="Insert text"><span class="ico" style="--ico: url(/editor/icons/text.svg)" aria-hidden="true"></span>Text</button>
+        <button type="button" data-cmd="object.add" data-type="shape" aria-label="Insert shape"><span class="ico" style="--ico: url(/editor/icons/shape.svg)" aria-hidden="true"></span>Shape</button>
+        <button type="button" data-cmd="object.add" data-type="button" aria-label="Insert button"><span class="ico" style="--ico: url(/editor/icons/button.svg)" aria-hidden="true"></span>Button</button>
+        <button type="button" data-cmd="object.add" data-type="hotspot" aria-label="Insert hotspot"><span class="ico" style="--ico: url(/editor/icons/hotspot.svg)" aria-hidden="true"></span>Hotspot</button>
+        <button type="button" data-cmd="object.add" data-type="input" aria-label="Insert text input"><span class="ico" style="--ico: url(/editor/icons/input.svg)" aria-hidden="true"></span>Input</button>
+        <button type="button" data-cmd="object.add" data-type="image" aria-label="Insert image (registers an asset)"><span class="ico" style="--ico: url(/editor/icons/image.svg)" aria-hidden="true"></span>Image</button>
+        <button type="button" data-cmd="object.add" data-type="slider" aria-label="Insert slider (adds a number variable)"><span class="ico" style="--ico: url(/editor/icons/slider.svg)" aria-hidden="true"></span>Slider</button>
+        <button type="button" data-cmd="object.add" data-type="dial" aria-label="Insert dial (adds a number variable)"><span class="ico" style="--ico: url(/editor/icons/dial.svg)" aria-hidden="true"></span>Dial</button>
+        <button type="button" data-cmd="object.add" data-type="video" aria-label="Insert video (registers the file and optional captions)"><span class="ico" style="--ico: url(/editor/icons/video.svg)" aria-hidden="true"></span>Video</button>
+        <button type="button" data-cmd="object.add" data-type="audio" aria-label="Insert audio (registers the file and optional captions)"><span class="ico" style="--ico: url(/editor/icons/audio.svg)" aria-hidden="true"></span>Audio</button>
+        <button type="button" data-cmd="object.add" data-type="marker" aria-label="Insert marker (a button that opens a label)"><span class="ico" style="--ico: url(/editor/icons/marker.svg)" aria-hidden="true"></span>Marker</button>
+      </span>
+      <span class="tb-group zoom-group" role="group" aria-label="Zoom">
+        <button id="btn-zoom-out" type="button" class="icon" data-ui="zoom" aria-label="Zoom out" title="Zoom out (Ctrl+-)" aria-keyshortcuts="Control+-"><span class="ico" style="--ico: url(/editor/icons/zoom-out.svg)" aria-hidden="true"></span></button>
+        <output id="zoom" aria-label="Canvas zoom"></output>
+        <button id="btn-zoom-in" type="button" class="icon" data-ui="zoom" aria-label="Zoom in" title="Zoom in (Ctrl+=)" aria-keyshortcuts="Control+="><span class="ico" style="--ico: url(/editor/icons/zoom-in.svg)" aria-hidden="true"></span></button>
+        <button id="btn-zoom-fit" type="button" data-ui="zoom" title="Fit the slide in the window (Ctrl+0)" aria-keyshortcuts="Control+0"><span class="ico" style="--ico: url(/editor/icons/zoom-fit.svg)" aria-hidden="true"></span>Fit</button>
+        <button id="btn-zoom-100" type="button" data-ui="zoom" title="Actual size">100%</button>
+      </span>
+      <span class="tb-group" role="group" aria-label="Clipboard">
+        <button id="btn-copy" type="button" data-ui="clipboard.copy" aria-keyshortcuts="Control+C Meta+C"><span class="ico" style="--ico: url(/editor/icons/copy.svg)" aria-hidden="true"></span>Copy</button>
+        <button id="btn-paste" type="button" data-cmd="object.duplicate" aria-keyshortcuts="Control+V Meta+V"><span class="ico" style="--ico: url(/editor/icons/paste.svg)" aria-hidden="true"></span>Paste</button>
+        <button id="btn-dup" type="button" data-cmd="object.duplicate" aria-keyshortcuts="Control+D Meta+D"><span class="ico" style="--ico: url(/editor/icons/duplicate.svg)" aria-hidden="true"></span>Duplicate</button>
+      </span>
+      <span class="tb-group">
+        <label for="next-id">Next id</label>
+        <input id="next-id" data-ui="next-id" placeholder="auto" autocomplete="off" spellcheck="false" title="Optional id for the next slide, scene or object you add (lowercase, e.g. o-start)">
+      </span>
+      <span class="tb-group">
+        <label for="edit-layer">Editing</label>
+        <select id="edit-layer" data-ui="layer.edit"></select>
+      </span>
+      <button id="btn-timeline" type="button" data-ui="timeline" aria-expanded="true" aria-controls="timeline"><span class="ico" style="--ico: url(/editor/icons/timeline.svg)" aria-hidden="true"></span>Timeline</button>
+    </div>
+    <div id="viewport" class="viewport">
+      <div id="stagewrap" class="stagewrap"><div id="stage" class="stage" role="group" tabindex="-1"></div></div>
+    </div>
+    <section id="timeline" class="timeline" aria-labelledby="tl-title"></section>
+  </section>
+  <aside class="inspector" aria-label="Inspector">
+    <div id="tabs" class="tabs" role="tablist" aria-label="Inspector sections"></div>
+    <div id="tabpanel" class="tabpanel" role="tabpanel"></div>
+  </aside>
+</main>
+
+<section id="drawer" class="drawer" hidden aria-labelledby="drawer-title">
+  <div class="drawer-head">
+    <h2 id="drawer-title">Command log</h2>
+    <p>Every edit is a registry command. An agent sends the same JSON with <code>cf cmd</code> or the MCP tool <code>run_commands</code>.</p>
+    <button id="log-close" type="button" data-ui="log">Close</button>
+  </div>
+  <ol id="log-list" class="log-list" reversed></ol>
+</section>
+
+<div id="toasts" class="toasts"></div>
+<div id="sr-status" class="sr-only" role="status" aria-live="polite"></div>
+<dialog id="dlg"></dialog>
+<datalist id="state-names"></datalist>
+</body>
+</html>

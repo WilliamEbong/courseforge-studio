@@ -1,0 +1,12 @@
+<!-- CourseForge Studio library: original artwork drawn for CourseForge Studio. Licence: MIT (see LICENSE at the repository root and packages/library/LICENSE.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <g stroke="#1f2a44" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M134 62Q174 62 178 100L182 148" fill="none" stroke-width="10"/>
+    <rect x="172" y="144" width="20" height="28" rx="4" fill="#1f2a44"/>
+    <path d="M96 52L152 34" fill="none" stroke-width="10"/>
+    <rect x="104" y="48" width="32" height="34" rx="5" fill="#d9dee7"/>
+    <rect x="80" y="76" width="80" height="140" rx="26" fill="#d1495b"/>
+    <rect x="80" y="122" width="80" height="38" fill="#ffffff" stroke-width="6"/>
+    <path d="M100 141H140" fill="none" stroke-width="5"/>
+  </g>
+</svg>
