@@ -1,0 +1,29 @@
+appId: io.github.williamebong.courseforgestudio
+productName: CourseForge Studio
+copyright: Copyright © 2026 William Ebong
+directories:
+  output: dist
+files:
+  - package.json
+  - packages/**
+  - samples/**
+  - build/icon.ico
+  - "!**/*.test.js"
+asarUnpack:
+  - packages/**
+win:
+  target: nsis
+  icon: build/icon.ico
+nsis:
+  oneClick: true
+  perMachine: false
+  shortcutName: CourseForge Studio
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  artifactName: CourseForge-Studio-Setup-${version}.${ext}
+publish:
+  provider: github
+  owner: WilliamEbong
+  repo: courseforge-studio

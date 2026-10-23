@@ -16,5 +16,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npx playwright install chromium
-      - run: npm run e2e
+      - run: npm run e2e # uses the runner's installed Google Chrome (playwright.config.js: channel chrome)
+      - run: npm run dist
+      - name: Install silently and smoke-test the installed app
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist -Filter 'CourseForge-Studio-Setup-*.exe' | Select-Object -First 1
+          Start-Process $setup.FullName -ArgumentList '/S' -Wait
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs\courseforge-studio\CourseForge Studio.exe'
+          $p = Start-Process $exe -ArgumentList '--smoke' -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "smoke failed: $($p.ExitCode)" }

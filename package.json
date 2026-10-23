@@ -8,11 +8,16 @@
     "cf": "node packages/cli/cf.js",
     "serve": "node packages/cli/cf.js serve",
     "mcp": "node packages/cli/cf.js mcp",
-    "docs:commands": "node packages/cli/cf.js commands --markdown > docs/commands.md"
+    "docs:commands": "node packages/cli/cf.js commands --markdown > docs/commands.md",
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "dist": "electron-builder --win --publish never"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3"
   },
   "bin": {
     "cf": "packages/cli/cf.js"
@@ -28,5 +33,9 @@
     "url": "https://github.com/WilliamEbong/courseforge-studio.git"
   },
   "homepage": "https://github.com/WilliamEbong/courseforge-studio",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
+  "main": "packages/desktop/main.js"
 }
