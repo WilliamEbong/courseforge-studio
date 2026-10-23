@@ -12,3 +12,5 @@ courses/
 *.story
 !tests/fixtures/**/*.story
 .env
+.impeccable/*
+!.impeccable/surfaces/

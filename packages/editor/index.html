@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CourseForge Studio</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b6e6e'/%3E%3Ctext x='32' y='43' font-family='Segoe UI,Arial,sans-serif' font-size='28' font-weight='700' fill='%23fff' text-anchor='middle'%3ECF%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b6e6e'/%3E%3Crect x='6.5' y='10.5' width='17' height='13' rx='2.5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M23.5 4.5l1.5 3.8 3.8 1.5-3.8 1.5-1.5 3.8-1.5-3.8-3.8-1.5 3.8-1.5z' fill='%23fff' stroke='%230b6e6e' stroke-width='1.6' paint-order='stroke'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/editor/editor.css">
 <link rel="stylesheet" href="/packages/player/cf-lessons.css">
 <link rel="stylesheet" href="/editor/lessons-view.css">
@@ -15,7 +15,7 @@
 <div class="narrow" role="note">CourseForge Studio is laid out for windows 1024 pixels wide or more. Scroll sideways to reach every panel, or widen the window.</div>
 
 <header class="top">
-  <div class="brand"><span class="mark" aria-hidden="true">CF</span><span>Author</span></div>
+  <div class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)"/><rect x="6.5" y="10.5" width="17" height="13" rx="2.5" fill="none" stroke="var(--accent-ink)" stroke-width="2"/><path d="M23.5 4.5l1.5 3.8 3.8 1.5-3.8 1.5-1.5 3.8-1.5-3.8-3.8-1.5 3.8-1.5z" fill="var(--accent-ink)" stroke="var(--accent)" stroke-width="1.6" paint-order="stroke"/></svg><span>CourseForge <span class="brand-sub">Studio</span></span></div>
   <div class="course-only top-course">
     <button id="btn-courses" type="button" data-ui="course.picker"><span class="ico" style="--ico: url(/editor/icons/courses.svg)" aria-hidden="true"></span>Courses</button>
     <div class="course-name"><span id="course-title"></span><code id="course-file"></code></div>
@@ -35,9 +35,12 @@
     <button id="btn-pub-scorm" type="button" data-cmd="publish" data-target="scorm12" aria-label="Publish SCORM 1.2"><span class="ico" style="--ico: url(/editor/icons/scorm.svg)" aria-hidden="true"></span>SCORM 1.2</button>
     <button id="btn-storyline-export" type="button" data-ui="export.storyline" aria-label="Export for Storyline" title="A PowerPoint deck and a question file that Storyline 360 imports"><span class="ico" style="--ico: url(/editor/icons/export.svg)" aria-hidden="true"></span>Storyline</button>
   </div>
+  <div class="course-only tb" role="group" aria-label="Claude">
+    <button id="btn-ai" type="button" class="ai-btn" data-ui="ai.panel" aria-expanded="false" aria-controls="ai-panel" aria-keyshortcuts="Control+I" title="Ask Claude to change this course (Ctrl+I)"><span class="ico" style="--ico: url(/editor/icons/sparkle.svg)" aria-hidden="true"></span>Ask Claude</button>
+  </div>
   <div class="course-only tb" role="group" aria-label="Log, agents and help">
-    <button id="btn-log" type="button" data-ui="log" aria-expanded="false" aria-controls="drawer"><span class="ico" style="--ico: url(/editor/icons/log.svg)" aria-hidden="true"></span>Command log <span id="log-count" class="count"></span></button>
-    <button id="btn-agent" type="button" data-ui="agent"><span class="ico" style="--ico: url(/editor/icons/agent.svg)" aria-hidden="true"></span>Agent</button>
+    <button id="btn-log" type="button" title="Command log" data-ui="log" aria-expanded="false" aria-controls="drawer"><span class="ico" style="--ico: url(/editor/icons/log.svg)" aria-hidden="true"></span><span class="nl">Command log </span><span id="log-count" class="count"></span></button>
+    <button id="btn-agent" type="button" title="Do the same as an agent" data-ui="agent"><span class="ico" style="--ico: url(/editor/icons/agent.svg)" aria-hidden="true"></span><span class="nl">Agent</span></button>
     <button id="btn-keys" type="button" class="icon" data-ui="shortcuts" aria-label="Keyboard shortcuts (?)" title="Keyboard shortcuts (?)" aria-keyshortcuts="Shift+?">?</button>
   </div>
 </header>
@@ -103,6 +106,8 @@
   </div>
   <ol id="log-list" class="log-list" reversed></ol>
 </section>
+
+<aside id="ai-panel" class="ai-panel" hidden aria-labelledby="ai-title"></aside>
 
 <div id="toasts" class="toasts"></div>
 <div id="sr-status" class="sr-only" role="status" aria-live="polite"></div>

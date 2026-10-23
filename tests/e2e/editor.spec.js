@@ -683,14 +683,15 @@ test('choose files instead of typing paths: a .story to import and an image to i
   expect(fs.readFileSync(path.join(root, 'assets', 'team-photo.png'))).toEqual(png);
 });
 
-test('native .story default: create, edit, undo, reopen, import and agent commands keep the native file', async ({ page }) => {
+test('native .story format: create, edit, undo, reopen, import and agent commands keep the native file', async ({ page }) => {
   await page.goto(`${base}/?token=${TOKEN}`);
-  await expect(page.getByLabel('File format', { exact: true })).toHaveValue('story');
+  await expect(page.getByLabel('File format', { exact: true })).toHaveValue('json'); // the app's own format is the default
   await page.getByLabel('Lessons', { exact: true }).check();
   await expect(page.getByLabel('File format', { exact: true })).toHaveValue('json');
   await expect(page.getByLabel('File format', { exact: true })).toBeDisabled();
   await page.getByLabel('Slides', { exact: true }).check();
-  await expect(page.getByLabel('File format', { exact: true })).toHaveValue('story');
+  await expect(page.getByLabel('File format', { exact: true })).toBeEnabled();
+  await page.getByLabel('File format', { exact: true }).selectOption('story');
   await page.getByLabel('File name', { exact: true }).fill('native');
   await page.getByLabel('Course title', { exact: true }).fill('Native Course');
   await page.getByRole('button', { name: 'Create course', exact: true }).click();

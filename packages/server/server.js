@@ -68,6 +68,21 @@ function readJson(req) {
   });
 }
 
+/** What the start screen draws for a course: its first slide's boxes (slides) or cover and sections (lessons). */
+function coverOf(doc) {
+  const plain = (t) => (typeof t === 'string' ? t : JSON.stringify(t ?? '').replace(/"[a-z]+":|[{}[\]",]/gi, ' ')).replace(/\s+/g, ' ').trim().slice(0, 90);
+  const asset = (id) => doc.assets?.find?.((a) => a.id === id)?.path ?? null;
+  if (doc.mode === 'lessons') return { mode: 'lessons', image: asset(doc.cover?.image), sections: doc.sections.slice(0, 4).map((s) => s.title), lessons: doc.sections.reduce((n, s) => n + (s.lessons?.length ?? 0), 0) };
+  const first = doc.slides.find((s) => s.id === doc.scenes[0]?.slides[0]) ?? doc.slides[0];
+  return {
+    mode: 'slides', w: doc.size.w, h: doc.size.h, slides: doc.slides.length, bg: first?.background ?? null,
+    objects: (first?.objects ?? []).filter((o) => !o.hidden).slice(0, 40).map((o) => ({
+      type: o.type, x: o.x, y: o.y, w: o.w, h: o.h ?? 40, fill: o.style?.fill ?? null, color: o.style?.color ?? null, fs: o.style?.fontSize ?? null,
+      bold: !!o.style?.bold, r: o.style?.radius ?? 0, shape: o.shape, text: o.text ? plain(o.text) : null, image: o.type === 'image' ? asset(o.image) : null,
+    })),
+  };
+}
+
 const shown = (f) => { const r = path.relative(process.cwd(), f); return (r.startsWith('..') || path.isAbsolute(r) ? f : r).split(path.sep).join('/'); };
 
 export function createServer({ root = 'courses', token = crypto.randomBytes(24).toString('base64url'), port = 8420, dataDir, aiProvider } = {}) {
@@ -162,9 +177,9 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       if (req.method === 'GET') {
         const courses = fs.readdirSync(root).filter((f) => /\.story$|\.course\.json$/i.test(f) && NAME.test(f.replace(/\.story$|\.course\.json$/i, ''))).map((f) => {
           const file = path.join(root, f);
-          let title = null;
-          try { title = io.loadCourse(file).title; } catch { /* listed as unreadable */ }
-          return { name: f.replace(/\.story$|\.course\.json$/i, ''), file: f, format: io.isStory(f) ? 'story' : 'json', title, rev: io.revision(file), ...(title === null ? { invalid: true } : {}) };
+          let title = null, cover = null;
+          try { const doc = io.loadCourse(file); title = doc.title; cover = coverOf(doc); } catch { /* listed as unreadable */ }
+          return { name: f.replace(/\.story$|\.course\.json$/i, ''), file: f, format: io.isStory(f) ? 'story' : 'json', title, rev: io.revision(file), cover, ...(title === null ? { invalid: true } : {}) };
         });
         return json(res, 200, { ok: true, courses });
       }

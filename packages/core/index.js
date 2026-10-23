@@ -130,9 +130,11 @@ function answerKey(q) {
   if (q.type === 'dragdrop') return `items=${(q.items || []).map((it) => `${it.object}>${it.target ?? '-'}`).join(' ')} targets=${(q.targets || []).map((t) => `${t.object}:${t.capacity ?? 'one'}`).join(' ')}`;
   return q.choices.map((c) => (c.correct ? '*' : '') + c.id + ':' + c.label).join(' ');
 }
-const clip = (s, n = 40) => (s.length > n ? s.slice(0, n - 3) + '...' : s);
+const clipText = (s, n = 40) => (s.length > n ? s.slice(0, n - 3) + '...' : s);
+const clip = clipText;
 /** One line per block: id, type and the facts an agent needs (items, gate rule, question key). */
-export function fmtBlock(b) {
+export function fmtBlock(b, full = false) {
+  const clip = full ? (t) => t : clipText;
   const first = b.label ?? b.text ?? b.prompt ?? '';
   const facts = [
     first && `"${clip(first)}"`,
@@ -148,7 +150,8 @@ export function fmtBlock(b) {
   return `${b.id} ${b.type}${facts.length ? ' ' + facts.join(' ') : ''}`;
 }
 
-export function describe(doc) {
+/** Text outline of a course; `full` keeps every text whole (the AI change card diffs it). */
+export function describe(doc, { full = false } = {}) {
   const d = normalize(doc);
   const nav = d.player.navigation === 'restricted' ? ' (restricted)' : '';
   const out = [d.mode === 'lessons' ? `course ${d.id} "${d.title}" lessons${nav}` : `course ${d.id} "${d.title}" ${d.size.w}x${d.size.h}`];
@@ -157,12 +160,12 @@ export function describe(doc) {
     for (const l of s.lessons) {
       const quiz = l.kind === 'quiz' ? ` quiz pass=${l.passPercent ?? 80}% attempts=${l.attempts || 'unlimited'} reveal=${l.reveal ?? 'all'}${l.randomize ? ' randomize' : ''}${l.shuffle ? ' shuffle' : ''}${l.requirePass ? ' requirePass' : ''}` : '';
       out.push(`  lesson ${l.id} "${l.title}"${quiz}`);
-      for (const b of l.blocks) out.push('    ' + fmtBlock(b));
+      for (const b of l.blocks) out.push('    ' + fmtBlock(b, full));
     }
   }
   if (d.variables.length) out.push('vars: ' + d.variables.map((v) => `${v.name}:${v.type}=${fmtVal(v.initial)}`).join(', '));
   const bySlide = new Map(d.slides.map((s) => [s.id, s]));
-  const objLine = (o) => `${o.id} ${o.type}${o.text ? ` "${o.text.length > 40 ? o.text.slice(0, 37) + '...' : o.text}"` : ''} @${o.x},${o.y} ${o.w}x${o.h}${o.hidden ? ' hidden' : ''}${o.initialState !== 'normal' ? ' [' + o.initialState + ']' : ''}${Object.keys(o.states || {}).length ? ' states:' + Object.keys(o.states).join('/') : ''}${extra(o)}`;
+  const objLine = (o) => `${o.id} ${o.type}${o.text ? ` "${full ? o.text : clipText(o.text)}"` : ''} @${o.x},${o.y} ${o.w}x${o.h}${o.hidden ? ' hidden' : ''}${o.initialState !== 'normal' ? ' [' + o.initialState + ']' : ''}${Object.keys(o.states || {}).length ? ' states:' + Object.keys(o.states).join('/') : ''}${extra(o)}`;
   // scenes, then question banks; a draw slide is one line (bank, count, order, always/never)
   for (const [kind, sc] of [...d.scenes.map((x) => ['scene', x]), ...d.banks.map((x) => ['bank', x])]) {
     out.push(`${kind} ${sc.id} "${sc.title}"`);

@@ -6,6 +6,7 @@ import { renderRich, fitText } from '/packages/player/rich.js';
 import { drawLine } from '/packages/player/line.js';
 import { richField } from '/packages/editor/rich-field.js';
 import { BUILTIN_STATES, objectSchema, eventSchema, actionSchema, condSchema, questionSchema, slideSchema, layerSchema, courseSchema, allIds, newId, rangeOf } from '/packages/schema/index.js';
+import { aiView } from './ai-view.js'; // Claude: start-screen status, AI settings, assistant panel
 import { lessonsView } from './lessons-view.js'; // the lessons-mode view (outline, lesson page, inspector)
 import { PRESETS, FONTS, themeOf } from '/packages/schema/themes.js'; // preset names, swatches, current choice
 
@@ -395,6 +396,7 @@ function render() {
   renderTop();
   if (S.doc) { if (lessons) LV.render(); else { renderOutline(); renderStage(); renderTimeline(); renderInspector(); } } else renderPicker();
   renderLog();
+  if (AI.isOpen() && !$('#ai-panel').contains(document.activeElement)) AI.renderPanel(); // keep the slide chip current, never under the author's typing
   markFieldError();
   for (const el of document.querySelectorAll('[data-cmd]')) if (!el.title && S.summaries[el.dataset.cmd]) el.title = `${el.dataset.cmd}: ${S.summaries[el.dataset.cmd]}`;
   if (focusId && document.activeElement?.id !== focusId) focusQuiet(document.getElementById(focusId));
@@ -416,37 +418,85 @@ function renderTop() {
 
 function renderPicker() {
   const list = S.courses;
-  const importFormat = $('#imp-format')?.value ?? 'story', fileFormat = $('#new-format')?.value ?? 'story';
+  const importFormat = $('#imp-format')?.value ?? 'story', fileFormat = $('#new-format')?.value ?? 'json';
   const lessons = $('#new-mode-lessons')?.checked ?? false;
-  const formats = [['story', 'Storyline (.story)'], ['json', 'CourseForge Studio (.course.json)']];
-  const newMode = (mode) => { $('#new-format').value = mode === 'lessons' ? 'json' : 'story'; $('#new-format').disabled = mode === 'lessons'; };
-  $('#picker').replaceChildren(h('div', { class: 'picker-card' },
-    h('h1', {}, 'Courses'),
-    hint('Courses are files in the server\'s courses folder. Agents edit the same files with cf and MCP, and open editors update live.'),
-    !token ? h('p', { class: 'field-err', role: 'alert' }, 'This page was opened without its access token. Open the URL that the server printed (it ends with ?token=...).') : null,
-    list === null ? hint('Loading...') : list.length
-      ? h('ul', { class: 'course-list' }, list.map((c) => h('li', {}, h('button', { type: 'button', 'data-ui': 'course.open', onclick: () => openCourse(c.name) },
-        h('span', { class: 'ct' }, c.title ?? '(unreadable file)'), h('code', {}, c.file)))))
-      : hint('No courses yet. Create the first one below.'),
-    h('h2', {}, 'New course'),
-    h('form', { class: 'new-course', onsubmit: createCourse },
-      h('fieldset', { class: 'course-mode' }, h('legend', {}, 'Course type'),
-        ctl('radio', 'new-mode-slides', 'Slides', !lessons, { cmd: 'new_course', set: newMode, attrs: { name: 'new-mode', value: 'slides' } }),
-        ctl('radio', 'new-mode-lessons', 'Lessons', lessons, { cmd: 'new_course', set: newMode, attrs: { name: 'new-mode', value: 'lessons' } }),
-        h('p', { class: 'hint' }, 'Slides: a fixed-size canvas with layers and triggers. Lessons: scrolling lessons made of blocks, for reading at any screen size.')),
-      ctl('text', 'new-name', 'File name', '', { cmd: 'new_course', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\\-]{0,60}', placeholder: 'safety-101', spellcheck: 'false', autocomplete: 'off' } }),
-      ctl('text', 'new-title', 'Course title', '', { cmd: 'new_course', attrs: { placeholder: 'Lab Safety 101' } }),
-      ctl('select', 'new-format', 'File format', fileFormat, { cmd: 'new_course', options: formats }),
-      h('button', { type: 'submit', class: 'primary', 'data-cmd': 'new_course' }, 'Create course')),
-    h('h2', {}, 'Import a Storyline file'),
-    hint('Open an editable .story copy, or convert it to a CourseForge Studio course. Choose a file or type a path in the courses folder. The source stays unchanged. Anything the editor cannot display is listed in a report next to the course.'),
-    h('form', { class: 'new-course', onsubmit: importCourse },
-      withPick(ctl('text', 'imp-path', 'Path of the .story file in the courses folder', '', { cmd: 'import_story', attrs: { required: true, placeholder: 'imports/module-1.story', spellcheck: 'false', autocomplete: 'off' } }), 'imports', '.story', 'Storyline file',
-        (p, file) => { if (!$('#imp-name').value) $('#imp-name').value = safeName(file.name).replace(/\.story$/, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 60); }),
-      ctl('text', 'imp-name', 'Name of the imported course', '', { cmd: 'import_story', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\-]{0,60}', placeholder: 'module-1', spellcheck: 'false', autocomplete: 'off' } }),
-      ctl('select', 'imp-format', 'Import format', importFormat, { cmd: 'import_story', options: formats }),
-      h('button', { type: 'submit', class: 'primary', 'data-cmd': 'import_story' }, 'Import'))));
+  const formats = [['json', 'CourseForge Studio (.course.json)'], ['story', 'Storyline (.story)']];
+  const newMode = (mode) => { if (mode === 'lessons') $('#new-format').value = 'json'; $('#new-format').disabled = mode === 'lessons'; };
+  const icon = (name) => h('span', { class: 'ico', style: `--ico: url(/editor/icons/${name}.svg)`, 'aria-hidden': 'true' });
+  const tile = (id, ico, title, text, onclick, primary) => h('button', { type: 'button', id, class: `start-tile${primary ? ' primary' : ''}`, 'data-ui': id, onclick },
+    icon(ico), h('span', { class: 'tile-t' }, title), h('span', { class: 'tile-d' }, text));
+  const ago = (rev) => { const m = Math.round((Date.now() - rev) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(rev).toLocaleDateString(); };
+  const meta = (c) => [c.cover?.mode === 'lessons' ? 'Lessons' : 'Slides', c.cover?.mode === 'lessons' ? `${c.cover.lessons} lessons` : c.cover ? `${c.cover.slides} slides` : null, `edited ${ago(c.rev)}`].filter(Boolean).join(' · ');
+  const reveal = (id) => { $(id).focus(); $(id).scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+  $('#picker').replaceChildren(h('div', { class: 'home' },
+    h('section', { class: 'start', 'aria-labelledby': 'start-h' },
+      h('h1', { id: 'start-h' }, 'Start a course'),
+      h('div', { class: 'start-strip' },
+        tile('start-ai', 'sparkle', 'Create with AI', 'Describe the course or attach a document. Claude drafts it for you to review.', () => AI.create(), true),
+        tile('start-outline', 'outline', 'From an outline', 'Paste headings and points. Each heading becomes a scene with slides.', () => startFromOutline()),
+        tile('start-blank', 'document-add', 'Blank course', 'An empty slides or lessons course, ready to build.', () => reveal('#new-name')),
+        tile('start-import', 'import', 'Open a .story file', 'Work on a copy of a Storyline project, or convert it.', () => reveal('#imp-path'))),
+      AI.statusLine()),
+    h('section', { class: 'shelf', 'aria-labelledby': 'shelf-h' },
+      h('div', { class: 'shelf-head' }, h('h2', { id: 'shelf-h' }, 'Your courses'), list?.length ? h('span', { class: 'muted' }, `${list.length} course${list.length === 1 ? '' : 's'}`) : null),
+      !token ? h('p', { class: 'field-err', role: 'alert' }, 'This page was opened without its access token. Close it and open CourseForge Studio again from its shortcut.') : null,
+      list === null ? h('ul', { class: 'course-list loading', 'aria-busy': 'true', 'aria-label': 'Loading courses' }, [1, 2, 3].map(() => h('li', {}, h('div', { class: 'course-card skel' }))))
+        : list.length ? h('ul', { class: 'course-list' }, list.map((c) => h('li', {}, h('button', { type: 'button', class: 'course-card', 'data-ui': 'course.open', onclick: () => openCourse(c.name), 'aria-describedby': `cm-${c.name}` },
+          coverView(c), h('span', { class: 'cc-text' }, h('span', { class: 'ct' }, c.title ?? 'Unreadable file'), h('span', { class: 'cm', id: `cm-${c.name}`, 'aria-hidden': 'true' }, c.invalid ? 'Open it to see what is wrong' : meta(c)), h('code', {}, c.file))))))
+        : h('div', { class: 'shelf-empty' }, h('p', {}, h('strong', {}, 'No courses yet.')), hint('Start one above. Courses are saved as files in this folder, so you can back them up or share them like any document.'))),
+    h('div', { class: 'new-panels' },
+      h('section', { class: 'new-panel', 'aria-labelledby': 'new-h' }, h('h2', { id: 'new-h' }, 'New course'),
+        h('form', { class: 'new-course', onsubmit: createCourse },
+          h('fieldset', { class: 'course-mode' }, h('legend', {}, 'Course type'),
+            ctl('radio', 'new-mode-slides', 'Slides', !lessons, { cmd: 'new_course', set: newMode, attrs: { name: 'new-mode', value: 'slides' } }),
+            ctl('radio', 'new-mode-lessons', 'Lessons', lessons, { cmd: 'new_course', set: newMode, attrs: { name: 'new-mode', value: 'lessons' } }),
+            h('p', { class: 'hint' }, 'Slides: a fixed-size canvas with layers and triggers. Lessons: scrolling pages of blocks that read well on any screen.')),
+          ctl('text', 'new-name', 'File name', '', { cmd: 'new_course', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\\-]{0,60}', placeholder: 'safety-101', spellcheck: 'false', autocomplete: 'off' } }),
+          ctl('text', 'new-title', 'Course title', '', { cmd: 'new_course', attrs: { placeholder: 'Lab Safety 101' } }),
+          ctl('select', 'new-format', 'File format', fileFormat, { cmd: 'new_course', options: formats }),
+          h('button', { type: 'submit', class: 'primary', 'data-cmd': 'new_course' }, 'Create course'))),
+      h('section', { class: 'new-panel', 'aria-labelledby': 'imp-h' }, h('h2', { id: 'imp-h' }, 'Import a .story file'),
+        hint('Open an editable .story copy, or convert it to a CourseForge Studio course. The source file is never changed; anything the editor cannot show is listed in a report beside the course.'),
+        h('form', { class: 'new-course', onsubmit: importCourse },
+          withPick(ctl('text', 'imp-path', 'Path of the .story file in the courses folder', '', { cmd: 'import_story', attrs: { required: true, placeholder: 'imports/module-1.story', spellcheck: 'false', autocomplete: 'off' } }), 'imports', '.story', 'Storyline file',
+            (p, file) => { if (!$('#imp-name').value) $('#imp-name').value = safeName(file.name).replace(/\.story$/, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 60); }),
+          ctl('text', 'imp-name', 'Name of the imported course', '', { cmd: 'import_story', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\-]{0,60}', placeholder: 'module-1', spellcheck: 'false', autocomplete: 'off' } }),
+          ctl('select', 'imp-format', 'Import format', importFormat, { cmd: 'import_story', options: formats }),
+          h('button', { type: 'submit', class: 'primary', 'data-cmd': 'import_story' }, 'Import'))))));
   $('#new-format').disabled = lessons;
+}
+
+/** A course cover: the first slide drawn from its own objects (slides), or the cover image and sections (lessons). */
+function coverView(c) {
+  const v = c.cover;
+  if (!v) return h('span', { class: 'cover broken', 'aria-hidden': 'true' });
+  const asset = (p) => `/assets/${token}/${encodeURIComponent(c.name)}/${p}`;
+  if (v.mode === 'lessons') return h('span', { class: 'cover lessons', 'aria-hidden': 'true' },
+    v.image ? h('img', { src: asset(v.image), alt: '', loading: 'lazy' }) : null,
+    h('span', { class: 'cl-text' }, h('span', { class: 'cl-title' }, c.title ?? ''), h('span', { class: 'cl-sections' }, v.sections.map((t) => h('span', {}, t)))));
+  const pct = (n, d) => `${(n / d) * 100}%`;
+  return h('span', { class: 'cover', 'aria-hidden': 'true', style: { aspectRatio: `${v.w} / ${v.h}`, background: v.bg ?? '#ffffff' } },
+    v.objects.map((o) => h('span', {
+      class: `co co-${o.type}`,
+      style: {
+        left: pct(o.x, v.w), top: pct(o.y, v.h), width: pct(o.w, v.w), height: pct(o.h, v.h),
+        background: o.image ? null : o.fill ?? (o.type === 'button' ? 'var(--accent)' : o.type === 'input' ? '#ffffff' : null),
+        color: o.color ?? (o.type === 'button' ? '#ffffff' : '#1b2129'), fontSize: o.fs ? `calc(${o.fs / v.w} * var(--cw))` : null, fontWeight: o.bold ? '700' : null,
+        borderRadius: o.shape === 'ellipse' ? '50%' : o.r ? `calc(${o.r / v.w} * var(--cw))` : null,
+      },
+    }, o.image ? h('img', { src: asset(o.image), alt: '', loading: 'lazy' }) : o.text && o.type !== 'input' ? o.text : null)));
+}
+
+/** "From an outline" on the start screen: a new slides course, opened straight into the outline dialog. */
+async function startFromOutline() {
+  const taken = new Set((S.courses ?? []).map((c) => c.name));
+  let name = 'new-course';
+  for (let n = 2; taken.has(name); n++) name = `new-course-${n}`;
+  const r = await call('POST', '/api/courses', { name, format: 'json', title: 'New course' });
+  record({ kind: 'new_course', name, format: 'json' }, r);
+  if (!r.ok) return showErrors(r.errors);
+  await openCourse(name, r);
+  showOutline();
 }
 
 // ----- outline -----
@@ -1815,6 +1865,7 @@ async function openCourse(name, loaded) {
   await drain(); // edits still on their way belong to the course that is open now
   const r = loaded ?? await call('GET', `/api/courses/${encodeURIComponent(name)}`);
   if (!r.ok) return showErrors(r.errors);
+  if (S.name !== name) AI.reset(); // a conversation belongs to one course
   Object.assign(S, { name, slide: null, layer: null, sel: [], draft: {}, tab: 'props', fieldErr: null, history: { undo: 0, redo: 0 }, saved: false, saveErr: null });
   saveStatus();
   adopt(r);
@@ -1827,6 +1878,7 @@ async function openCourse(name, loaded) {
 async function closeCourse() {
   await drain();
   events?.close();
+  AI.toggle(false);
   Object.assign(S, { name: null, doc: null, slide: null, layer: null, sel: [], draft: {}, courses: null, saved: false, saveErr: null });
   saveStatus();
   history.replaceState(null, '', `${location.pathname}${location.search}`);
@@ -1837,7 +1889,7 @@ async function closeCourse() {
 
 // ---------- wiring ----------
 const SHORTCUTS = [
-  ['Editing', [['Ctrl+Z', 'Undo'], ['Ctrl+Y', 'Ctrl+Shift+Z', 'Redo'], ['Ctrl+C', 'Copy the selected objects'], ['Ctrl+V', 'Paste them onto the slide or layer being edited'], ['Ctrl+D', 'Duplicate the selected objects']]],
+  ['Editing', [['Ctrl+Z', 'Undo'], ['Ctrl+Y', 'Ctrl+Shift+Z', 'Redo'], ['Ctrl+C', 'Copy the selected objects'], ['Ctrl+V', 'Paste them onto the slide or layer being edited'], ['Ctrl+D', 'Duplicate the selected objects'], ['Ctrl+I', 'Ask Claude: open or close the assistant']]],
   ['Canvas', [['Tab', 'Select the next object'], ['Shift+Click', 'Ctrl+Click', 'Add or remove an object from the selection'], ['Ctrl+A', 'Select every object on the slide or layer being edited'],
     ['Arrows', 'Move the selection 1 pixel'], ['Shift+Arrows', 'Move the selection 10 pixels'], ['Delete', 'Backspace', 'Delete the selection'], ['Escape', 'Clear the selection'],
     ['Drag on empty canvas', 'Select the objects inside the box (Shift adds)'], ['Shift+Drag a corner', 'Resize and keep the proportions'], ['Alt+Drag', 'Move without snapping'],
@@ -1858,6 +1910,7 @@ function onKey(e) {
   if (typing) return; // text fields keep their native undo, copy and paste
   const mod = e.ctrlKey || e.metaKey;
   if (e.key === '?' && !mod) { e.preventDefault(); showShortcuts(); return; }
+  if (mod && !e.altKey && e.key.toLowerCase() === 'i' && S.doc) { e.preventDefault(); AI.toggle(); return; }
   if (!mod || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k === 'z' && !e.shiftKey) { e.preventDefault(); guarded(historyOp)('undo'); } else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); guarded(historyOp)('redo'); }
@@ -1887,6 +1940,7 @@ async function init() {
   $('#btn-log').onclick = () => toggleLog();
   $('#log-close').onclick = () => toggleLog(false);
   $('#btn-agent').onclick = showAgent;
+  $('#btn-ai').onclick = () => AI.toggle();
   $('#btn-outline').onclick = showOutline;
   $('#btn-keys').onclick = showShortcuts;
   $('#btn-copy').onclick = copySel;
@@ -1911,12 +1965,13 @@ async function init() {
   new ResizeObserver(() => fit()).observe($('#viewport'));
   render();
   if (!token) return;
-  const [, cmds] = await Promise.all([loadCourses(), call('GET', '/api/commands')]);
+  const [, cmds] = await Promise.all([loadCourses(), call('GET', '/api/commands'), AI.refresh()]);
   if (cmds.ok) S.summaries = Object.fromEntries(cmds.commands.map((c) => [c.name, c.summary]));
   const fromHash = () => { const wanted = decodeURIComponent(location.hash.slice(1)); return wanted && wanted !== S.name ? openCourse(wanted) : render(); };
   window.addEventListener('hashchange', fromHash);
   await fromHash();
 }
 // ---------- lessons mode: packages/editor/lessons-view.js owns its outline, lesson page and inspector ----------
+const AI = aiView({ S, $, h, call, show, toast, adopt, render, announce, courseUrl, token, openCourse, loadCourses, record, showErrors });
 const LV = lessonsView({ exportPkg, readJsonFile, tabKey, S, $, h, ctl, colorCtl, themeGroup, group, hint, btn, cap, dispatch, ask, removeWithForce, announce, render, toast, call, record, courseUrl, showErrors, token });
 init();

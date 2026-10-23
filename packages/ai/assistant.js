@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { query } from '../core/index.js';
+import { describe } from '../core/index.js';
 import * as io from '../cli/io.js';
 import * as claude from './claude.js';
 import { createSettings } from './settings.js';
@@ -13,7 +13,7 @@ const MCP_SERVER = fileURLToPath(new URL('../mcp/server.js', import.meta.url)).r
 const READ_TOOLS = ['list_commands', 'describe_course', 'get_course', 'query', 'validate', 'play'];
 export const ALLOWED = [...READ_TOOLS, 'run_commands'].map((t) => `mcp__cf__${t}`);
 const err = (status, code, message, hint) => Object.assign(new Error(message), { status, errors: [{ path: '/ai', code, message, ...(hint ? { hint } : {}) }] });
-const outline = (file) => query(io.loadCourse(file), 'course.describe', {}).data;
+const outline = (file) => describe(io.loadCourse(file), { full: true });
 
 export const SYSTEM = (file, focus) => `You are the assistant inside CourseForge Studio, an e-learning authoring app. You edit one course file, "${file}", only through the cf tools.
 

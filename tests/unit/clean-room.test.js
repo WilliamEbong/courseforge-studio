@@ -16,7 +16,7 @@ const text = tracked.filter((f) => f !== SELF && !BINARY.test(f));
 
 const TOP = new Set(['packages', 'tests', 'samples', 'docs', 'specs', 'build', '.github', '.specify', '.claude', '.agents', '.codex',
   'README.md', 'LICENSE', 'CHANGELOG.md', 'CLAUDE.md', 'AGENTS.md', 'package.json', 'package-lock.json', 'playwright.config.js',
-  'electron-builder.yml', '.gitignore', '.gitattributes']);
+  'electron-builder.yml', '.gitignore', '.gitattributes', 'PRODUCT.md', 'DESIGN.md', '.impeccable']);
 // Internal working notes and private material never appear in the public tree or history.
 const PRIVATE = [/reverse.?engineer/i, /private-fixtures/i, /DIRECTIVE_PLAN/, /\bHANDOFF/, /\bresearch\//, /\bREA[- ]\d/, /Evidence ID/i,
   /\bev_[0-9a-f]{12}/, /[A-Z]:\\Users\\/i, /\/Users\/Owner\b/i, /sk-ant-[A-Za-z0-9]/];
