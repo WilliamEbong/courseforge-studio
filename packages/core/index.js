@@ -145,8 +145,14 @@ export function fmtBlock(b, full = false) {
     b.type === 'sorting' ? `categories=${b.categories.join('|')}` : '',
     b.type === 'scenario' ? `${b.scenes.length} scenes ${b.scenes.reduce((n, s) => n + s.items.length, 0)} items` : '',
     b.image || b.media ? `asset=${b.image ?? b.media}` : '',
+    full && b.type === 'question' ? fmtFeedback(b.feedback, b.choices) : '',
   ].filter(Boolean);
   return `${b.id} ${b.type}${facts.length ? ' ' + facts.join(' ') : ''}`;
+}
+/** Question feedback, for the full outline only (the AI change card and course review read it). */
+function fmtFeedback(fb = {}, choices = []) {
+  const parts = [['correct', fb.correct], ['incorrect', fb.incorrect], ['any', fb.any], ...choices.filter((c) => c.feedback).map((c) => [`choice ${c.id}`, c.feedback])].filter(([, t]) => t);
+  return parts.length ? `feedback ${parts.map(([k, t]) => `${k}: "${t}"`).join(' ')}` : 'feedback: none';
 }
 
 /** Text outline of a course; `full` keeps every text whole (the AI change card diffs it). */
@@ -176,6 +182,7 @@ export function describe(doc, { full = false } = {}) {
       const flags = [s.advance === 'auto' ? 'auto-advance' : '', s.revisit !== 'auto' ? 'revisit:' + s.revisit : '', s.duration !== 5000 ? `${s.duration}ms` : ''].filter(Boolean).join(' ');
       out.push(`  slide ${s.id} "${s.title}"${flags ? ' (' + flags + ')' : ''}`);
       if (s.question) out.push(`    question ${s.question.type} "${s.question.prompt}" ${answerKey(s.question)} pts=${s.question.points} attempts=${s.question.attempts}`);
+      if (s.question && full) out.push(`    ${fmtFeedback(s.question.feedback, s.question.choices)}`);
       for (const o of s.objects) out.push('    ' + objLine(o));
       for (const t of s.triggers) out.push('    ' + fmtTrigger(t));
       for (const l of s.layers) {

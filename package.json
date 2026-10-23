@@ -27,7 +27,7 @@
   "engines": {
     "node": ">=24.2"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-assisted e-learning authoring: slides, triggers, quizzes and lessons, published to Web and SCORM.",
   "author": "William Ebong",
   "repository": {

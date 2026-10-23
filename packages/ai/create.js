@@ -11,7 +11,7 @@ import { inside } from '../server/projects.js';
 import * as io from '../cli/io.js';
 import * as claude from './claude.js';
 import { ALLOWED, err, mcpConfigFor } from './assistant.js';
-import { OUTLINE_SYSTEM, OUTLINE_SCHEMA, BUILD_SYSTEM, REVIEW_SYSTEM, REVIEW_SCHEMA } from './prompts.js';
+import { OUTLINE_SYSTEM, OUTLINE_SCHEMA, BUILD_SYSTEM, FEEDBACK_SYSTEM, REVIEW_SYSTEM, REVIEW_SCHEMA } from './prompts.js';
 
 const NAME = /^[a-z0-9][a-z0-9-]{0,60}$/;
 const DOCS = /\.(md|txt|docx|pdf)$/i;
@@ -28,6 +28,16 @@ export function documentText(file) {
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&').replace(/\n{3,}/g, '\n\n').trim();
   }
   return null;
+}
+
+/** Questions whose feedback is missing or only the generic default: [{id, kind: 'slide'|'block'}]. */
+export function questionsWithoutFeedback(doc) {
+  const generic = (t) => !t || /^(correct!?|not quite\.?|try again\.?|incorrect\.?)$/i.test(t.trim());
+  const weak = (q) => !q.feedback?.any && !(q.choices?.length && q.choices.every((c) => c.feedback)) && (generic(q.feedback?.correct) || generic(q.feedback?.incorrect));
+  return [
+    ...doc.slides.filter((s) => s.question && weak(s.question)).map((s) => ({ id: s.id, kind: 'slide' })),
+    ...doc.sections.flatMap((sec) => sec.lessons.flatMap((l) => l.blocks.filter((b) => b.type === 'question' && weak(b)).map((b) => ({ id: b.id, kind: 'block' })))),
+  ];
 }
 
 export function createFlow({ root, dataDir, settings, provider = claude }) {
@@ -117,6 +127,15 @@ export function createFlow({ root, dataDir, settings, provider = claude }) {
         progress.done.push(part.id);
         fs.writeFileSync(progressFile(name), JSON.stringify(progress));
       }
+      // Every question must teach through its feedback: one targeted pass for any the build left generic.
+      let missing = questionsWithoutFeedback(io.loadCourse(draft));
+      if (missing.length) {
+        onEvent({ type: 'part', index: parts.length, total: parts.length + 1, title: 'Feedback for every question' });
+        const r = await call({ system: FEEDBACK_SYSTEM(rel), prompt: `Write feedback for these questions: ${missing.map((m) => `${m.kind} ${m.id}`).join(', ')}.`,
+          model: model(), mcpConfig, allowedTools: ALLOWED, maxTurns: 10, cwd: dir, draftFile: draft, signal, onEvent });
+        costUsd += r.costUsd;
+        missing = questionsWithoutFeedback(io.loadCourse(draft));
+      }
       const built = io.loadCourse(draft);
       const issues = [...query(built, 'validate').data, ...query(built, 'a11y').data];
       // The course appears only when complete, and never over one created meanwhile: COPYFILE_EXCL fails if the name is taken.
@@ -124,7 +143,7 @@ export function createFlow({ root, dataDir, settings, provider = claude }) {
       fs.copyFileSync(draft, final, fs.constants.COPYFILE_EXCL);
       for (const f of [draft, `${draft}.history.json`, progressFile(name)]) fs.rmSync(f, { force: true });
       fs.rmSync(dir, { recursive: true, force: true });
-      return { name, file: path.basename(final), parts: parts.length, issues: issues.length, costUsd };
+      return { name, file: path.basename(final), parts: parts.length, issues: issues.length + missing.length, missingFeedback: missing.length, costUsd };
     } finally { building.delete(name); }
   }
 

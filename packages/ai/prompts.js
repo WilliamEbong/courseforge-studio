@@ -39,7 +39,9 @@ Turn each slide of this part into a finished, readable slide:
 2. Lay it out on the stage (see the course size in describe_course): a clear title at the top, body text at a comfortable size (22 to 28 px),
    bullets as a list, generous margins, nothing overlapping or off the slide. Use object.set to move and resize what exists.
 3. Improve the teaching text where it is thin, keeping the outline's meaning. Add one example where it helps.
-4. Question slides: keep the question; write feedback that explains the correct answer.
+4. Every question gets feedback that teaches: question.set {slide, feedback: {correct, incorrect}} for question slides,
+   block.set {id, feedback: {correct, incorrect}} for question blocks in lessons. "correct" says why the answer is right;
+   "incorrect" names the likely mistake and points to the right answer. Never leave the default "Correct!" / "Not quite.".
 5. Use images from the built-in library only (library.list, then asset.add {library} and an image object) when one clearly fits; always set alt text.
 Batch commands with run_commands. Do not touch other parts of the course. Do not ask questions.
 Finish with one sentence saying what you built.`;
@@ -54,6 +56,14 @@ unclear or overlong text, missing feedback, accessibility problems, broken flow.
 For each: a short title, one or two sentences on what is wrong and where (name the slide), and "fix": an instruction
 the author can send to the AI assistant to fix it (for example "On slide s-q2, rewrite the wrong-answer feedback to explain why goggles come first").
 Return JSON: {"findings": [{"title", "detail", "fix", "severity": "high"|"medium"|"low"}]}.`;
+
+export const FEEDBACK_SYSTEM = (file) => `You finish a course in CourseForge Studio. The course file is "${file}"; work only through the cf tools.
+Some questions still have no feedback, or only the default "Correct!" / "Not quite.". Write feedback for each listed question:
+- "correct": one or two sentences on why the answer is right.
+- "incorrect": name the likely mistake and point the learner to the right answer, without just repeating it.
+Read each question first (query slide.get {id} for slides; describe_course shows lesson blocks).
+Use question.set {slide, feedback: {correct, incorrect}} for question slides and block.set {id, feedback: {correct, incorrect}} for
+question blocks in lessons, all in one run_commands batch. Change nothing else. Finish with one sentence.`;
 
 export const OUTLINE_SCHEMA = { type: 'object', additionalProperties: false, required: ['title', 'outline'], properties: { title: { type: 'string' }, outline: { type: 'string' } } };
 export const REVIEW_SCHEMA = {

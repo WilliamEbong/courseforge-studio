@@ -54,7 +54,8 @@ test('outline: an oversized outline is retried once with the reason; attachments
 test('build: one session per scene on a hidden draft; a failure resumes where it stopped; the course appears only when done', async () => {
   let failOnce = true;
   const s = setup((prompt) => {
-    const scene = /Build scene (\S+)/.exec(prompt)[1];
+    const scene = /Build scene (\S+)/.exec(prompt)?.[1];
+    if (!scene) return { summary: 'Feedback left as is.' }; // the post-build feedback pass
     if (prompt.includes('"Check"') && failOnce) { failOnce = false; return { error: { code: 'busy', message: 'Claude is busy.' } }; }
     return { batches: [[{ cmd: 'scene.set', args: { id: scene, title: prompt.includes('"Check"') ? 'Check your understanding' : 'Before you start' } }]], summary: 'Built it.' };
   });
