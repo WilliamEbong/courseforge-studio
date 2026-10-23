@@ -20,7 +20,8 @@ const HARNESS_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 // Resolve a URL path inside root; returns null when it escapes root (path traversal guard).
 export function resolveInside(root, urlPath) {
-  const decoded = decodeURIComponent(urlPath.split('?')[0]);
+  let decoded;
+  try { decoded = decodeURIComponent(urlPath.split('?')[0]); } catch { return null; } // malformed %-escape: 404, not a crash
   const full = path.resolve(root, '.' + path.posix.normalize('/' + decoded));
   return full === root || full.startsWith(root + path.sep) ? full : null;
 }

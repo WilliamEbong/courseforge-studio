@@ -47,7 +47,7 @@ function sendFile(res, file, headers = {}) {
   try { st = file && fs.statSync(file); } catch { /* missing or invalid name */ }
   if (!st || !st.isFile()) throw notFound(); // no directory listing
   res.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'content-length': st.size, 'cache-control': 'no-store', ...headers });
-  fs.createReadStream(file).on('error', () => res.destroy()).pipe(res); // a read failure ends this response, not the server
+  pipeline(fs.createReadStream(file), res).catch(() => {}); // a read failure or client abort ends this response and closes the file
 }
 
 // ponytail: oversized bodies are drained (memory stays bounded) and then refused; destroy the socket if bandwidth ever matters.
@@ -149,7 +149,7 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
     if ((m = /^\/assets\/([^/]+)\/([^/]+)\/(.+)$/.exec(p))) { // /assets/<token>/<course>/<file>: <img> tags cannot send headers
       only(req, 'GET');
       if (!okToken(m[1])) throw fail(401, '/token', 'auth', 'missing or wrong token');
-      courseFile(m[2]);
+      if (!NAME.test(m[2])) throw notFound(); // name check only; a directory scan per asset is wasted work
       // library/<name> the courses folder lacks comes from packages/library (same rule as the publisher).
       const own = inside(root, m[3]);
       return sendFile(res, own ?? ((await publisher()).LIBRARY_PATH?.test(m[3]) ? inside(path.join(PACKAGES, 'library'), m[3].slice(8)) : null));

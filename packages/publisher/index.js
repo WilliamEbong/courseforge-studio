@@ -284,9 +284,10 @@ export function validatePackage(dir) {
     const bad = xmlProblem(xml);
     if (bad) add('imsmanifest.xml', 'xml', `imsmanifest.xml is not well-formed: ${bad}`);
     const href = /<resource\b[^>]*?\shref="([^"]*)"/.exec(xml);
-    if (href) launch = decodeURIComponent(unXml(href[1])); else add('imsmanifest.xml', 'launch', 'no <resource href> launch entry');
+    const dec = (h) => { try { return decodeURIComponent(h); } catch { add(h, 'xml', 'imsmanifest.xml href has a malformed %-escape'); return h; } };
+    if (href) launch = dec(unXml(href[1])); else add('imsmanifest.xml', 'launch', 'no <resource href> launch entry');
     for (const m of xml.matchAll(/<file\s+href="([^"]*)"/g)) {
-      const f = decodeURIComponent(unXml(m[1]));
+      const f = dec(unXml(m[1]));
       if (!isFile(f)) add(f, 'missing', 'listed in imsmanifest.xml but not in the package');
     }
   }

@@ -56,8 +56,12 @@ test('format selection, commit once, reload, preview and publish', async ({ page
   await page.getByRole('button', { name: 'Bold', exact: true }).click();
   await page.keyboard.press('Control+i');
   await page.getByRole('button', { name: 'Bullets', exact: true }).click();
-  page.once('dialog', (dialog) => dialog.accept('https://example.com/learn'));
   await page.getByRole('button', { name: 'Link', exact: true }).click();
+  await page.getByLabel('Link URL').fill('javascript:alert(1)');
+  await page.getByRole('button', { name: 'Add link' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Use an https:' })).toBeVisible();
+  await page.getByLabel('Link URL').fill('https://example.com/learn');
+  await page.getByRole('button', { name: 'Add link' }).click();
   expect(io.history.depth(file).undo).toBe(before);
   await page.locator('#p-alt').focus();
   await idle(page);
@@ -154,8 +158,11 @@ test('keyboard numbering and link, then clear formatting preserves text', async 
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
   await expect(page.getByRole('button', { name: 'Link', exact: true })).toBeFocused();
-  page.once('dialog', (dialog) => dialog.accept('HTTPS://example.com'));
   await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Link URL')).toBeFocused();
+  await page.keyboard.type('HTTPS://example.com');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#p-text')).toBeFocused(); // the link is applied once the dialog has closed
   await page.keyboard.press('Control+b');
   await page.locator('#p-alt').focus();
   await idle(page);

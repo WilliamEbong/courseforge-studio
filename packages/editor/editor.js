@@ -313,7 +313,7 @@ function ask({ title, message, fields = [], ok = 'OK', danger = false, cmd = nul
         return f.file ? withPick(el, 'assets', f.file, f.label) : el;
       }),
       h('div', { class: 'dlg-actions' },
-        h('button', { value: 'cancel', formnovalidate: true, 'data-ui': 'dialog.cancel' }, 'Cancel'),
+        h('button', { type: 'button', 'data-ui': 'dialog.cancel', onclick: () => dlg.close('cancel') }, 'Cancel'), // not a submit button: Enter in a field means OK
         h('button', { value: 'ok', class: danger ? 'danger' : 'primary', 'data-cmd': cmd, 'data-ui': cmd ? null : 'dialog.ok' }, ok)));
     dlg.setAttribute('aria-labelledby', 'dlg-title');
     dlg.replaceChildren(library ? h('div', { class: 'dlg-body' }, head, ...sourceTabs(form, (x) => { picked = { library: x.id, alt: x.alt }; dlg.close(); })) : form);

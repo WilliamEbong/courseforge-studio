@@ -290,7 +290,9 @@ export function createLessonRuntime(docIn, { lms = null, rng = Math.random } = {
     q.passed = q.score >= cfg(l, 'passPercent');
     q.phase = 'results';
     log(`quiz ${l.id} ${q.score} ${q.passed ? 'passed' : 'failed'}`);
-    lms?.score?.({ raw: q.score, min: 0, max: 100 });
+    // Like slides scoreClosed: once the LMS has a final status, a later quiz must not overwrite its score.
+    const closed = S.reported === 'passed' || S.reported === 'completed' || (S.reported === 'failed' && doc.tracking.status?.endsWith('-failed'));
+    if (!closed) lms?.score?.({ raw: q.score, min: 0, max: 100 });
     if (q.passed || !cfg(l, 'requirePass')) complete(l);
     checkTracking(l.id);
   }
@@ -361,7 +363,7 @@ export function createLessonRuntime(docIn, { lms = null, rng = Math.random } = {
     log('restart');
   }
 
-  const QUIET = new Set(['tick', 'reach', 'search']);
+  const QUIET = new Set(['tick', 'reach', 'search', 'input']); // input fires per keystroke; submit and navigation save it
   function dispatch(ev) {
     if (!ev || typeof ev.type !== 'string') throw new TypeError('event must be {type, ...}');
     switch (ev.type) {

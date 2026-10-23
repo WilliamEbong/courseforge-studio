@@ -93,15 +93,46 @@ export function richField({ id, label, rich, text, commit }) {
     editor.focus();
     if (saved) { const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(saved); }
   }
-  function format(command) {
-    restore();
+  // window.prompt() throws in Electron, so the link URL is asked for in a <dialog>. It lives inside the group so
+  // focusing it does not count as leaving the field (no early commit). Resolves with the URL, or null on cancel.
+  function askLink() {
+    return new Promise((resolve) => {
+      const dlg = document.createElement('dialog');
+      const form = document.createElement('form');
+      form.method = 'dialog';
+      const label = document.createElement('label');
+      label.textContent = 'Link URL (https:, http: or mailto:)';
+      const input = document.createElement('input');
+      input.id = `${id}-link`;
+      input.spellcheck = false;
+      label.htmlFor = input.id;
+      const error = document.createElement('p');
+      error.setAttribute('role', 'alert');
+      const actions = document.createElement('div');
+      actions.className = 'dlg-actions';
+      const cancel = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Cancel', onclick: () => dlg.close('cancel') });
+      const ok = Object.assign(document.createElement('button'), { textContent: 'Add link', value: 'ok', className: 'primary' }); // the only submit button, so Enter adds the link
+      actions.append(cancel, ok);
+      form.addEventListener('submit', (event) => {
+        if (event.submitter?.value !== 'ok' || safeLink(linkValue(input.value.trim()))) return;
+        event.preventDefault();
+        error.textContent = 'Use an https:, http: or mailto: link.';
+        input.focus();
+      });
+      form.append(label, input, error, actions);
+      dlg.append(form);
+      dlg.addEventListener('close', () => { dlg.remove(); resolve(dlg.returnValue === 'ok' ? linkValue(input.value.trim()) : null); });
+      group.append(dlg);
+      dlg.showModal();
+    });
+  }
+  async function format(command) {
     let value;
     if (command === 'createLink') {
-      value = window.prompt('Link URL (https:, http: or mailto:)');
-      if (value === null) return;
-      value = linkValue(value.trim());
-      if (!safeLink(value)) { window.alert('Use an https:, http: or mailto: link.'); return; }
+      value = await askLink();
+      if (value === null) { restore(); return; }
     }
+    restore();
     // Native editing keeps caret/selection and the browser's text undo history together.
     document.execCommand(command, false, value);
     if (command === 'removeFormat') {

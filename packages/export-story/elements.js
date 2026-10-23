@@ -98,7 +98,7 @@ export function elements(size, resolve, guid = crypto.randomUUID, textScale = te
         a.quiz ? el('customData', { enumName: action, data: '', g: resolve('quiz-result:' + a.quiz), bool: false }) : ''), el('condLst', {}, conditions));
     if (t.else?.length) {
       const alt = trigger({ on, do: t.else }).replace(/^<trig\b/, '<elseTrigger').replace(/<\/trig>$/, '</elseTrigger>');
-      result = result.replace('</data>', alt + '</data>');
+      result = result.replace('</data>', () => alt + '</data>'); // a function: "$&" in user text is not a pattern
     }
     return result;
   }

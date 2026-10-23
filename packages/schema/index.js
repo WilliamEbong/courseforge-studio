@@ -499,6 +499,7 @@ export function validate(doc) {
           if (v && a.op !== 'toggle' && a.value === undefined && a.fromVar === undefined) errs.push({ path: ap('value'), code: 'required', message: `value or fromVar is required for op "${a.op}"` });
           if (v && a.op === 'toggle' && v.type !== 'boolean') errs.push({ path: ap('op'), code: 'semantic', message: 'toggle only applies to boolean variables' });
           if (v && ['add', 'sub', 'mul', 'div'].includes(a.op) && v.type !== 'number') errs.push({ path: ap('op'), code: 'semantic', message: `${a.op} only applies to number variables` });
+          if (['add', 'sub', 'mul', 'div'].includes(a.op) && a.value !== undefined && typeof a.value !== 'number') errs.push({ path: ap('value'), code: 'type', message: `${a.op} needs a number value` });
           if (v && a.op === 'set' && a.value !== undefined && typeof a.value !== { number: 'number', boolean: 'boolean', text: 'string' }[v.type]) errs.push({ path: ap('value'), code: 'type', message: `"${a.var}" is ${v.type}; value must match` });
         }
       }));
@@ -512,6 +513,7 @@ export function validate(doc) {
       if ((q.type === 'mc' || q.type === 'tf') && nCorrect !== 1) errs.push({ path: ptr(...sp, 'question', 'choices'), code: 'semantic', message: `${q.type} questions need exactly one correct choice (found ${nCorrect})` });
       if (q.type === 'mr' && nCorrect < 1) errs.push({ path: ptr(...sp, 'question', 'choices'), code: 'semantic', message: 'mr questions need at least one correct choice' });
       if (['mc', 'mr', 'tf'].includes(q.type) && q.choices.length < 2) errs.push({ path: ptr(...sp, 'question', 'choices'), code: 'semantic', message: 'choice questions need at least two choices' });
+      if (['mc', 'mr', 'tf'].includes(q.type) && q.choices.length > 26) errs.push({ path: ptr(...sp, 'question', 'choices'), code: 'semantic', message: `choice questions allow at most 26 choices (found ${q.choices.length})`, hint: 'SCORM 1.2 choice responses are single letters (a-z)' });
       if (q.type === 'hotspot') {
         const areas = q.areas || [];
         const ap = ptr(...sp, 'question', 'areas');

@@ -213,6 +213,7 @@ function reid(d, slide, ctx, srcId) {
   slide.layers.forEach((l) => l.triggers.forEach(fixTrig));
   const q = slide.question; // drag-and-drop items and targets name objects of this slide
   for (const x of [...(q?.items || []), ...(q?.targets || [])]) { if (map.has(x.object)) x.object = map.get(x.object); if (map.has(x.target)) x.target = map.get(x.target); }
+  for (const o of slide.objects) if (o.members) o.members = o.members.map((id) => map.get(id) ?? id); // drag groups
   return map;
 }
 
@@ -639,7 +640,8 @@ export const commands = [
         o.y += a.dy ?? 0;
         (dest ?? slide).objects.push(o);
       }
-      const local = new Set([...slide.layers, ...slide.objects, ...slide.layers.flatMap((l) => l.objects)].map((x) => x.id));
+      for (const id of map.values()) { const o = (dest ?? slide).objects.find((x) => x.id === id); if (o.members) o.members = o.members.map((m) => map.get(m) ?? m); } // drag groups
+      const local =new Set([...slide.layers, ...slide.objects, ...slide.layers.flatMap((l) => l.objects)].map((x) => x.id));
       const out = { ids: hits.map((x) => map.get(x.item.id)), triggers: [], skipped: [] };
       for (const t of [...(src.layer ?? src.slide).triggers].filter((x) => map.has(x.on.target))) {
         const c = structuredClone(t);

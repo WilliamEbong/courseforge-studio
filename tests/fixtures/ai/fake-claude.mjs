@@ -20,6 +20,11 @@ if (mode === 'ok') {
   say({ type: 'result', subtype: 'success', is_error: false, result: 'never reached' });
 } else if (mode === 'auth') {
   say({ type: 'result', subtype: 'success', is_error: true, result: 'Failed to authenticate: OAuth session expired and could not be refreshed', total_cost_usd: 0 });
+} else if (mode === 'split') { // a multi-byte character split across two stdout chunks
+  const line = Buffer.from(JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: 'Safety — basics', total_cost_usd: 0 }) + '\n');
+  const cut = line.indexOf(0x94); // last byte of the em dash (e2 80 94)
+  process.stdout.write(line.subarray(0, cut));
+  setTimeout(() => process.stdout.write(line.subarray(cut)), 50);
 } else if (mode === 'crash') {
   process.stderr.write('something broke\n');
   process.exit(3);

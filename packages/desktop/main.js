@@ -4,7 +4,7 @@ import { app, BrowserWindow, dialog, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createServer } from '../server/server.js';
-import { documentsDir, ensureProjects } from '../server/projects.js';
+import { ensureProjects } from '../server/projects.js';
 
 const SMOKE = process.argv.includes('--smoke');
 const argValue = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : undefined; };
@@ -85,7 +85,7 @@ else {
   app.on('window-all-closed', () => app.quit());
   process.on('uncaughtException', (e) => log('uncaught:', e));
   app.whenReady().then(async () => {
-    const root = path.resolve(argValue('--root') ?? path.join(documentsDir(), 'CourseForge Studio'));
+    const root = path.resolve(argValue('--root') ?? path.join(app.getPath('documents'), 'CourseForge Studio')); // native lookup; documentsDir() spawns PowerShell (~0.5 s) at launch
     try { ensureProjects(root); } catch (e) { return fatal(`The projects folder ${root} could not be created.`, 'Check that your Documents folder can be written to, then open CourseForge Studio again.', e); }
     let server;
     try { server = await startServer(root); } catch (e) { return fatal('The editor could not start its local service.', 'Close CourseForge Studio everywhere and open it again. If it keeps happening, restart Windows.', e); }

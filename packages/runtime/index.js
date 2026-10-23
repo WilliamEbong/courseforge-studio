@@ -739,7 +739,10 @@ export function createRuntime(docIn, opts = {}) {
       snap.q = Object.fromEntries(Object.entries(S.q).map(([sid, q]) => {
         const extra = { ...(q.text ? { t: q.text } : {}), ...(q.point ? { p: { ...q.point } } : {}),
           ...(Object.keys(q.placed ?? {}).length ? { d: { ...q.placed } } : {}), ...(Object.keys(q.matched ?? {}).length ? { m: { ...q.matched } } : {}) };
-        return [allSlideIx.get(sid), [[...q.order], q.selected.map(id => q.order.indexOf(id)), q.attempts, q.result === 'correct' ? 1 : q.result === 'incorrect' ? 2 : 0,
+        // Choice order as one base-36 digit per choice ("" = authored order); id lists stay readable on restore.
+        const ids = slideById.get(sid).question.choices.map((c) => c.id);
+        const ord = ids.length > 36 ? [...q.order] : q.order.every((id, i) => id === ids[i]) ? '' : q.order.map((id) => ids.indexOf(id).toString(36)).join('');
+        return [allSlideIx.get(sid), [ord, q.selected.map(id => q.order.indexOf(id)), q.attempts, q.result === 'correct' ? 1 : q.result === 'incorrect' ? 2 : 0,
           ...(Object.keys(extra).length ? [extra] : [])]];
       }));
     }
@@ -819,7 +822,9 @@ export function createRuntime(docIn, opts = {}) {
       const sid = snap.v === 2 ? doc.slides[Number(key)]?.id : key;
       let qs = raw;
       if (snap.v === 2 && Array.isArray(raw)) {
-        const order = Array.isArray(raw[0]) ? raw[0] : [], extra = isObj(raw[4]) ? raw[4] : {};
+        const choices = slideById.get(sid)?.question?.choices ?? [];
+        const order = Array.isArray(raw[0]) ? raw[0] : raw[0] === '' ? choices.map((c) => c.id) : typeof raw[0] === 'string' ? [...raw[0]].map((d) => choices[parseInt(d, 36)]?.id) : [];
+        const extra = isObj(raw[4]) ? raw[4] : {};
         qs = { order, selected: Array.isArray(raw[1]) ? raw[1].filter(i => Number.isInteger(i) && i >= 0 && i < order.length).map(i => order[i]) : [],
           attempts: raw[2], result: raw[3] === 1 ? 'correct' : raw[3] === 2 ? 'incorrect' : null, text: extra.t, point: extra.p, placed: extra.d, matched: extra.m };
       }

@@ -101,6 +101,8 @@ export function run({ system, prompt, model = MODELS.default, mcpConfig, allowed
         if (!out.ok) out.error = classify(`${ev.subtype ?? ''} ${out.text} ${(ev.errors ?? []).join(' ')}`);
       }
     };
+    child.stdout.setEncoding('utf8'); // decode across chunk boundaries, not per chunk
+    child.stderr.setEncoding('utf8');
     child.stdout.on('data', (d) => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { onLine(buf.slice(0, i)); buf = buf.slice(i + 1); } });
     child.stderr.on('data', (d) => { stderr += d; });
     child.on('error', (e) => finish({ ok: false, error: e.code === 'ENOENT' ? fail('not-installed', 'Claude Code is not installed on this computer.', INSTALL_HINT) : fail('ai-error', e.message) }));

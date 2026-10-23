@@ -58,8 +58,10 @@ test('compact question resume rejects malformed indexes and changed choice sets'
   const question = snap.q[0];
   question[1] = [999, -1, '0', {}, 0];
   const resumed = createRuntime(doc).restore(JSON.parse(JSON.stringify(snap)));
-  assert.deepEqual(resumed.state.q[sid].selected, [question[0][0]]);
-  question[0][0] = 'missing-choice';
-  const changed = createRuntime(doc).restore(JSON.parse(JSON.stringify(snap)));
-  assert.equal(changed.state.q[sid], undefined);
+  assert.deepEqual(resumed.state.q[sid].selected, [resumed.state.q[sid].order[0]]);
+  for (const order of [['missing-choice'], 'zz', '0000']) { // unknown id, out-of-range and repeated choice indexes
+    question[0] = order;
+    const changed = createRuntime(doc).restore(JSON.parse(JSON.stringify(snap)));
+    assert.equal(changed.state.q[sid], undefined, JSON.stringify(order));
+  }
 });

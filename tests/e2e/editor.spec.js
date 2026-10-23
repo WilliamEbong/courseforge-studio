@@ -676,7 +676,7 @@ test('choose files instead of typing paths: a .story to import and an image to i
   await dialog.locator('input[type=file]').setInputFiles({ name: 'Team Photo.PNG', mimeType: 'image/png', buffer: png });
   await expect(dialog.getByLabel('Image path', { exact: true })).toHaveValue('assets/team-photo.png');
   await dialog.getByLabel(/^Alt text/).fill('The team');
-  await dialog.getByRole('button', { name: 'Insert image', exact: true }).click();
+  await dialog.getByLabel(/^Alt text/).press('Enter'); // Enter in a field means OK, not Cancel
   await idle(page);
   const doc = io.loadCourse(fileOf('my-module-1'));
   expect(doc.assets.some((a) => a.path === 'assets/team-photo.png' && a.alt === 'The team')).toBe(true);
