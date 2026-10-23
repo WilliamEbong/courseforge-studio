@@ -3,10 +3,10 @@
 import fs from 'node:fs';
 
 const mode = process.env.FAKE_CLAUDE_MODE ?? 'ok';
-const prompt = fs.readFileSync(0, 'utf8');
-if (process.env.FAKE_CLAUDE_LOG) fs.writeFileSync(process.env.FAKE_CLAUDE_LOG, JSON.stringify({ argv: process.argv.slice(2), prompt }));
 if (process.argv.includes('--version')) { console.log('9.9.9 (Claude Code)'); process.exit(0); }
 if (process.argv[2] === 'auth') { console.log(JSON.stringify({ loggedIn: mode !== 'auth' })); process.exit(0); }
+const prompt = fs.readFileSync(0, 'utf8');
+if (process.env.FAKE_CLAUDE_LOG) fs.writeFileSync(process.env.FAKE_CLAUDE_LOG, JSON.stringify({ argv: process.argv.slice(2), prompt }));
 
 const say = (o) => process.stdout.write(JSON.stringify(o) + '\n');
 const tool = (n) => say({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'mcp__cf__describe_course', input: { file: `x${n}` } }] } });

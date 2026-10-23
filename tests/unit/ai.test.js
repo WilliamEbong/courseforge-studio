@@ -32,7 +32,9 @@ test('provider: passes the model, isolation flags and allow list; prompt on stdi
   const { argv, prompt } = JSON.parse(fs.readFileSync(log, 'utf8'));
   assert.equal(prompt, 'make the title shorter');
   assert.equal(argv[argv.indexOf('--model') + 1], 'claude-haiku-5-5');
-  for (const flag of ['-p', '--safe-mode', '--strict-mcp-config', '--no-session-persistence']) assert.ok(argv.includes(flag), flag);
+  for (const flag of ['-p', '--restricted', '--disable-slash-commands', '--strict-mcp-config', '--no-session-persistence']) assert.ok(argv.includes(flag), flag);
+  assert.ok(!argv.includes('--safe-mode'), '--safe-mode would switch the course MCP server off');
+  assert.equal(argv[argv.indexOf('--setting-sources') + 1], '', 'no user, project or local settings (and so none of their hooks)');
   assert.equal(argv[argv.indexOf('--tools') + 1], '', 'no built-in tools');
   assert.equal(argv[argv.indexOf('--permission-mode') + 1], 'dontAsk');
   assert.equal(argv[argv.indexOf('--allowedTools') + 1], ALLOWED.join(','));
@@ -50,11 +52,17 @@ test('provider: plain-language errors for a signed-out CLI, a crash and a missin
   await withFake('auth', async () => { const r = await claude.run({ system: 's', prompt: 'p', cwd: tmp() }); assert.equal(r.error.code, 'not-signed-in'); assert.match(r.error.hint, /\/login/); });
   await withFake('crash', async () => { const r = await claude.run({ system: 's', prompt: 'p', cwd: tmp() }); assert.equal(r.ok, false); assert.match(r.error.message, /something broke/); });
   process.env.CF_CLAUDE_BIN = path.join(tmp(), 'no-such-claude.exe');
-  try { const r = await claude.run({ system: 's', prompt: 'p', cwd: tmp() }); assert.equal(r.error.code, 'not-installed'); assert.equal(claude.probe().available, false); }
+  try { const r = await claude.run({ system: 's', prompt: 'p', cwd: tmp() }); assert.equal(r.error.code, 'not-installed'); assert.equal((await claude.probe({ fresh: true })).available, false); }
   finally { delete process.env.CF_CLAUDE_BIN; }
 });
 
-test('probe: version and sign-in state', () => withFake('ok', () => assert.deepEqual(claude.probe(), { available: true, version: '9.9.9', loggedIn: true, detail: null })));
+test('probe: version and sign-in state, without blocking', () => withFake('ok', async () => assert.deepEqual(await claude.probe({ fresh: true }), { available: true, version: '9.9.9', loggedIn: true, detail: null })));
+
+test('provider: an aborted signal stops the run and reports cancelled', () => withFake('loop', async () => {
+  const ac = new AbortController();
+  const running = claude.run({ system: 's', prompt: 'p', cwd: tmp(), signal: ac.signal, onEvent: () => ac.abort() });
+  assert.equal((await running).error.code, 'cancelled');
+}));
 
 test('settings: AI is off until enabled; the daily limit refuses before anything runs; failures are counted', () => {
   const s = createSettings(tmp());
@@ -115,6 +123,19 @@ test('assistant: a course edited meanwhile refuses Apply; Discard removes the dr
   assert.deepEqual([none.changed, none.draftId], [false, null]);
   assert.deepEqual(fs.readdirSync(root).filter((f) => f.startsWith('.ai-draft')), []);
   assert.throws(() => a.apply('missing'), (e) => e.status === 404);
+});
+
+test('assistant: drafts left by a crash are swept at startup; an invalid course leaves no draft', async () => {
+  const { root, file } = course();
+  for (const f of ['.ai-draft-0123456789ab.course.json', '.ai-draft-0123456789ab.course.json.history.json', '.ai-draft-new-keep.course.json']) fs.writeFileSync(path.join(root, f), '{}');
+  fs.mkdirSync(path.join(root, 'assets', '.ai-draft-0123456789ab'), { recursive: true });
+  const a = createAssistant({ root, dataDir: tmp(), provider: fakeProvider([rename]) });
+  assert.deepEqual(fs.readdirSync(root).filter((f) => f.startsWith('.ai-draft')), ['.ai-draft-new-keep.course.json'], 'resumable builds are kept');
+  assert.equal(fs.existsSync(path.join(root, 'assets', '.ai-draft-0123456789ab')), false);
+  a.settings.set({ enabled: true });
+  fs.writeFileSync(file, '{"not":"a course"}');
+  await assert.rejects(a.ask({ file, prompt: 'x' }));
+  assert.deepEqual(fs.readdirSync(root).filter((f) => f.startsWith('.ai-draft-') && !f.includes('new')), []);
 });
 
 test('assistant: a failed run reports a plain error, counts as used and leaves no draft', async () => {

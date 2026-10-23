@@ -22,3 +22,11 @@ export function ensureProjects(root) {
   for (const f of fs.readdirSync(path.join(SAMPLES, 'assets'))) fs.copyFileSync(path.join(SAMPLES, 'assets', f), path.join(root, 'assets', f));
   return true;
 }
+
+const within = (base, abs) => { const r = path.relative(base, abs); return !!r && r !== '..' && !r.startsWith('..' + path.sep) && !path.isAbsolute(r); };
+/** Resolve `rel` inside `base`; null when missing or when it would escape (traversal, other drive, UNC, symlink, junction). */
+export function inside(base, rel) {
+  const abs = path.resolve(base, rel);
+  if (!within(base, abs)) return null;
+  try { return within(fs.realpathSync(base), fs.realpathSync(abs)) ? abs : null; } catch { return null; }
+}

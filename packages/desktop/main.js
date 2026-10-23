@@ -40,10 +40,15 @@ function openWindow(origin, token) {
     icon: path.join(app.getAppPath(), 'build', 'icon.ico'), autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
   });
+  // Every window, popups included (the preview opens in one), stays on the local origin; web links go to the browser.
   const local = (url) => url.startsWith(origin + '/');
   const external = (url) => { if (/^https?:\/\//i.test(url)) shell.openExternal(url); };
-  win.webContents.setWindowOpenHandler(({ url }) => (local(url) ? { action: 'allow' } : (external(url), { action: 'deny' })));
-  win.webContents.on('will-navigate', (e, url) => { if (!local(url)) { e.preventDefault(); external(url); } });
+  const lock = (contents) => {
+    contents.setWindowOpenHandler(({ url }) => (local(url) ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false } } } : (external(url), { action: 'deny' })));
+    contents.on('will-navigate', (e, url) => { if (!local(url)) { e.preventDefault(); external(url); } });
+  };
+  app.on('web-contents-created', (_e, contents) => lock(contents));
+  lock(win.webContents);
   win.webContents.on('render-process-gone', (_e, d) => log('renderer gone:', d.reason));
   win.once('ready-to-show', () => win.show());
   win.on('closed', () => { win = null; });

@@ -118,7 +118,7 @@ function extra(o) {
     const r = rangeOf(o);
     return ` var=${o.var} ${r.min}..${r.max} step ${r.step}${o.live === false ? ' on-release' : ''}${o.type === 'dial' ? ` ${o.startAngle ?? -90}°..${o.endAngle ?? 90}°` : ''}`;
   }
-  if (o.type === 'marker') return o.detail ? ` detail "${clip(o.detail)}"` : '';
+  if (o.type === 'marker') return o.detail ? ` detail "${clipText(o.detail)}"` : '';
   if (o.type === 'video' || o.type === 'audio') return ` media=${o.media}${o.captions ? ' captions=' + o.captions : ''}${o.poster ? ' poster=' + o.poster : ''}${o.autoplay ? ' autoplay' : ''}${o.loop ? ' loop' : ''}${o.controls === false ? ' no-controls' : ''}`;
   return '';
 }
@@ -131,7 +131,6 @@ function answerKey(q) {
   return q.choices.map((c) => (c.correct ? '*' : '') + c.id + ':' + c.label).join(' ');
 }
 const clipText = (s, n = 40) => (s.length > n ? s.slice(0, n - 3) + '...' : s);
-const clip = clipText;
 /** One line per block: id, type and the facts an agent needs (items, gate rule, question key). */
 export function fmtBlock(b, full = false) {
   const clip = full ? (t) => t : clipText;

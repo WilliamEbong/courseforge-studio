@@ -84,3 +84,31 @@ test('review: findings come back with a fix for the assistant, using the fast mo
   assert.equal(r.findings[0].severity, 'high');
   assert.match(s.prompts[0], /Course outline:\ncourse lab-safety/);
 });
+
+test('attachments: only Word, PDF, Markdown or text files inside the courses folder (no other drives, no escapes)', async () => {
+  const s = setup(() => ({ structured: { title: 'T', outline: OUTLINE } }));
+  fs.writeFileSync(path.join(s.root, 'notes.exe'), 'x');
+  const outside = path.join(tmp(), 'secret.md');
+  fs.writeFileSync(outside, 'secret');
+  for (const bad of ['notes.exe', outside, String.raw`D:\secret.md`, String.raw`\\server\share\notes.md`, '../x.md']) {
+    await assert.rejects(s.flow.outline({ brief: { topic: 'Lab safety' }, attachments: [bad] }), (e) => e.errors[0].code === 'path', bad);
+  }
+});
+
+test('build: an edited outline starts over; one build per name at a time; never over a course created meanwhile or a .story', async () => {
+  let release, gate = new Promise((r) => { release = r; });
+  const s = setup((prompt) => (prompt.includes('"Check"') ? gate.then(() => ({ summary: 'ok' })) : { summary: 'ok' }));
+  const args = { name: 'ppe', title: 'PPE', mode: 'slides', outline: OUTLINE };
+  const first = s.flow.build(args);
+  await assert.rejects(s.flow.build(args), (e) => e.errors[0].code === 'busy');
+  fs.copyFileSync(new URL('../../samples/lab-safety.course.json', import.meta.url), path.join(s.root, 'ppe.course.json')); // created while building
+  release();
+  await assert.rejects(first, (e) => e.errors[0].code === 'dupe');
+  assert.equal(io.loadCourse(path.join(s.root, 'ppe.course.json')).title, 'Lab Safety Essentials', 'the other course is untouched');
+  fs.rmSync(path.join(s.root, 'ppe.course.json'));
+  const edited = await s.flow.build({ ...args, outline: OUTLINE.replace('# Check', '# Check\n## Extra item\nMore.') });
+  assert.equal(io.loadCourse(path.join(s.root, 'ppe.course.json')).slides.length, 5, 'the edited outline was built, not the old draft');
+  assert.equal(edited.parts, 2);
+  fs.writeFileSync(path.join(s.root, 'other.story'), 'x');
+  await assert.rejects(s.flow.build({ ...args, name: 'other' }), (e) => e.errors[0].code === 'dupe');
+});

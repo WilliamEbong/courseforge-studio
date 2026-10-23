@@ -34,13 +34,8 @@ import { PUBLISH_TARGETS } from '../core/publish-targets.js';
 const fail = (status, p, code, message, hint) => Object.assign(new Error(message), { status, errors: [{ path: p, code, message, ...(hint ? { hint } : {}) }] });
 const notFound = () => fail(404, '/url', 'not-found', 'not found');
 
-const within = (base, abs) => { const r = path.relative(base, abs); return !!r && r !== '..' && !r.startsWith('..' + path.sep) && !path.isAbsolute(r); };
-/** Resolve `rel` inside `base`; null when missing or when it would escape (traversal, other drive, UNC, symlink, junction). */
-export function inside(base, rel) {
-  const abs = path.resolve(base, rel);
-  if (!within(base, abs)) return null;
-  try { return within(fs.realpathSync(base), fs.realpathSync(abs)) ? abs : null; } catch { return null; }
-}
+export { inside } from './projects.js';
+import { inside } from './projects.js';
 
 const json = (res, status, body, headers = {}) => {
   res.writeHead(status, { 'content-type': MIME['.json'], 'cache-control': 'no-store', ...headers });
@@ -95,9 +90,11 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
   const creator = createFlow({ root, dataDir: dataDir ?? path.join(root, '.courseforge'), settings: assistant.settings, provider: aiProvider ?? fake });
   /** NDJSON: progress lines, then {type:'done', ...result} or {type:'error', errors}. */
   const stream = async (res, work) => {
+    const ac = new AbortController(); // a closed connection (dialog closed, page reloaded) cancels Claude
+    res.on('close', () => { if (!res.writableFinished) ac.abort(); });
     res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' });
-    const send = (o) => res.write(JSON.stringify(o) + '\n');
-    try { send({ type: 'done', ...(await work(send)) }); } catch (e) { send({ type: 'error', errors: e.errors ?? [{ path: '/', code: 'internal', message: e.message }] }); }
+    const send = (o) => { if (!res.destroyed) res.write(JSON.stringify(o) + '\n'); };
+    try { send({ type: 'done', ...(await work(send, ac.signal)) }); } catch (e) { send({ type: 'error', errors: e.errors ?? [{ path: '/', code: 'internal', message: e.message }] }); }
     res.end();
   };
   const tokenBuf = Buffer.from(token);
@@ -178,12 +175,12 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       return json(res, 200, { ok: true, commands: names.map((name) => query(null, 'commands.help', { name }).data) });
     }
     if (p === '/ai') { // AI status (Claude CLI found and signed in, settings, today's usage) and settings changes
-      if (req.method === 'GET') return json(res, 200, { ok: true, ...assistant.status() });
+      if (req.method === 'GET') return json(res, 200, { ok: true, ...(await assistant.status()) });
       const body = await readJson(req);
       return json(res, 200, { ok: true, ...assistant.settings.set(body ?? {}) });
     }
-    if (p === '/ai/outline') { only(req, 'POST'); const body = await readJson(req); return stream(res, () => creator.outline(body ?? {})); }
-    if (p === '/ai/build') { only(req, 'POST'); const body = await readJson(req); return stream(res, (send) => creator.build({ ...(body ?? {}), onEvent: send })); }
+    if (p === '/ai/outline') { only(req, 'POST'); const body = await readJson(req); return stream(res, (send, signal) => creator.outline({ ...(body ?? {}), signal })); }
+    if (p === '/ai/build') { only(req, 'POST'); const body = await readJson(req); return stream(res, (send, signal) => creator.build({ ...(body ?? {}), onEvent: send, signal })); }
     if (p === '/courses') {
       if (req.method === 'GET') {
         const courses = fs.readdirSync(root).filter((f) => /\.story$|\.course\.json$/i.test(f) && NAME.test(f.replace(/\.story$|\.course\.json$/i, ''))).map((f) => {
@@ -269,10 +266,10 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       const body = await readJson(req);
       if (q === 'apply') return json(res, 200, { ...assistant.apply(String(body?.draftId ?? '')), ...state(file, load(file)) });
       if (q === 'discard') return json(res, 200, assistant.discard(String(body?.draftId ?? '')));
-      if (q === 'review') return stream(res, () => creator.review({ file }));
+      if (q === 'review') return stream(res, (send, signal) => creator.review({ file, signal }));
       if (q !== 'ask') throw notFound();
       if (body?.focus !== undefined && typeof body.focus !== 'string') throw fail(400, '/focus', 'type', 'focus must be a string');
-      return stream(res, async (send) => ({ card: await assistant.ask({ file, prompt: body?.prompt, focus: body?.focus, onEvent: send }) }));
+      return stream(res, async (send, signal) => ({ card: await assistant.ask({ file, prompt: body?.prompt, focus: body?.focus, onEvent: send, signal }) }));
     }
     if (op === 'query') {
       only(req, 'GET');

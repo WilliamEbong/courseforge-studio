@@ -64,7 +64,10 @@ export function aiView({ S, $, h, call, show, toast, adopt, render, announce, co
     if (open) { refresh().then(renderPanel); renderPanel(); setTimeout(() => $('#ai-prompt')?.focus(), 0); }
   }
   /** A new course: forget the old conversation. */
-  function reset() { turns = []; review = null; if (open) renderPanel(); }
+  function reset() { // a new course: discard proposals nobody applied, forget the conversation
+    for (const t of turns) if (t.card?.draftId && !t.applied && !t.discarded) call('POST', courseUrl('/ai/discard'), { draftId: t.card.draftId });
+    turns = []; review = null; if (open) renderPanel();
+  }
 
   const diffView = (diff) => h('pre', { class: 'ai-diff', tabindex: '0', 'aria-label': 'Changes to the course outline' },
     diff.map((d) => h('span', { class: `d d-${d.op === '+' ? 'add' : d.op === '-' ? 'del' : d.op === '…' ? 'gap' : 'ctx'}` },

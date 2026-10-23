@@ -12,7 +12,14 @@ import { createSettings } from './settings.js';
 const MCP_SERVER = fileURLToPath(new URL('../mcp/server.js', import.meta.url)).replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`);
 const READ_TOOLS = ['list_commands', 'describe_course', 'get_course', 'query', 'validate', 'play'];
 export const ALLOWED = [...READ_TOOLS, 'run_commands'].map((t) => `mcp__cf__${t}`);
-const err = (status, code, message, hint) => Object.assign(new Error(message), { status, errors: [{ path: '/ai', code, message, ...(hint ? { hint } : {}) }] });
+export const err = (status, code, message, hint) => Object.assign(new Error(message), { status, errors: [{ path: '/ai', code, message, ...(hint ? { hint } : {}) }] });
+/** Write the MCP config that serves only `rel` (a draft inside root) to Claude; returns its path. */
+export function mcpConfigFor(root, rel, dir) {
+  const file = path.join(dir, 'mcp.json');
+  fs.writeFileSync(file, JSON.stringify({ mcpServers: { cf: { command: process.execPath, args: [MCP_SERVER, '--root', root, '--only', rel], env: process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {} } } }));
+  return file;
+}
+const DRAFT = /^\.ai-draft-[0-9a-f]{12}(\.course\.json|\.story)(\.history\.json)?$/;
 const outline = (file) => describe(io.loadCourse(file), { full: true });
 
 export const SYSTEM = (file, focus) => `You are the assistant inside CourseForge Studio, an e-learning authoring app. You edit one course file, "${file}", only through the cf tools.
@@ -76,33 +83,37 @@ export function createAssistant({ root, dataDir, provider = claude }) {
   root = path.resolve(root);
   const settings = createSettings(dataDir);
   const drafts = new Map(); // id -> {file, draftFile, rev, summary}
-  const cleanup = (d) => { for (const f of [d.draftFile, `${d.draftFile}.history.json`]) fs.rmSync(f, { force: true }); fs.rmSync(`${d.draftFile}.history`, { recursive: true, force: true }); drafts.delete(d.id); };
+  const remove = (draftFile, id) => {
+    for (const f of [draftFile, `${draftFile}.history.json`]) fs.rmSync(f, { force: true });
+    for (const d of [`${draftFile}.history`, path.join(path.dirname(draftFile), 'assets', `.ai-draft-${id}`)]) fs.rmSync(d, { recursive: true, force: true }); // .story drafts extract media here
+  };
+  const cleanup = (d) => { remove(d.draftFile, d.id); drafts.delete(d.id); };
+  // Drafts live only as long as this process: leftovers from a crash or restart are swept now.
+  try { for (const f of fs.readdirSync(root)) if (DRAFT.test(f)) remove(path.join(root, f), f.slice(10, 22)); } catch { /* an empty or missing root */ }
 
   return {
     settings,
-    status() { return { ...settings.get(), cli: provider.probe() }; },
+    async status() { return { ...settings.get(), cli: await provider.probe() }; },
 
     /** Run one request on a fresh draft. Returns a change card: {draftId, summary, changed, diff, commands, turns, costUsd}. */
-    async ask({ file, prompt, focus, onEvent = () => {} }) {
+    async ask({ file, prompt, focus, signal, onEvent = () => {} }) {
       if (typeof prompt !== 'string' || !prompt.trim()) throw err(400, 'required', 'Type what you want changed.');
       settings.check();
       const id = crypto.randomBytes(6).toString('hex');
       const draftFile = path.join(path.dirname(file), `.ai-draft-${id}${file.endsWith('.story') ? '.story' : '.course.json'}`);
-      fs.copyFileSync(file, draftFile); // same folder, so the course's relative asset paths still resolve
       const d = { id, file, draftFile, rev: io.revision(file) };
-      drafts.set(id, d);
-      const before = outline(file);
       const work = path.join(dataDir, 'ai-runs', id);
-      fs.mkdirSync(work, { recursive: true });
-      const rel = path.relative(root, draftFile).split(path.sep).join('/');
-      const mcpConfig = path.join(work, 'mcp.json');
-      fs.writeFileSync(mcpConfig, JSON.stringify({ mcpServers: { cf: { command: process.execPath, args: [MCP_SERVER, '--root', root, '--only', rel], env: process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {} } } }));
-      const model = claude.MODELS[settings.get().model] ?? claude.MODELS.default;
-      onEvent({ type: 'status', text: 'Reading the course…' });
-      let r;
+      let r, before;
       try {
-        r = await provider.run({ system: SYSTEM(rel, focus), prompt, model, mcpConfig, allowedTools: ALLOWED, maxTurns: 12, cwd: work, draftFile, onEvent });
-      } finally { fs.rmSync(work, { recursive: true, force: true }); }
+        before = outline(file);
+        fs.copyFileSync(file, draftFile); // same folder, so the course's relative asset paths still resolve
+        drafts.set(id, d);
+        fs.mkdirSync(work, { recursive: true });
+        const rel = path.relative(root, draftFile).split(path.sep).join('/');
+        const model = claude.MODELS[settings.get().model] ?? claude.MODELS.default;
+        onEvent({ type: 'status', text: 'Reading the course…' });
+        r = await provider.run({ system: SYSTEM(rel, focus), prompt, model, mcpConfig: mcpConfigFor(root, rel, work), allowedTools: ALLOWED, maxTurns: 12, cwd: work, draftFile, signal, onEvent });
+      } catch (e) { cleanup(d); throw e; } finally { fs.rmSync(work, { recursive: true, force: true }); }
       settings.record({ ok: r.ok, costUsd: r.costUsd });
       if (!r.ok) { cleanup(d); throw err(502, r.error?.code ?? 'ai-error', r.error?.message ?? 'Claude did not finish.', r.error?.hint); }
       const after = outline(draftFile);
@@ -117,7 +128,9 @@ export function createAssistant({ root, dataDir, provider = claude }) {
       const d = drafts.get(id);
       if (!d) throw err(404, 'ref', 'This change is no longer available.', 'Ask again.');
       if (io.revision(d.file) !== d.rev) { cleanup(d); throw err(409, 'conflict', 'The course changed while Claude was working, so this change was not applied.', 'Ask again to redo it on the current course.'); }
-      const doc = io.loadCourse(d.draftFile);
+      let doc = io.loadCourse(d.draftFile);
+      // ponytail: .story media extracted for the draft live under assets/.ai-draft-<id>/; point them back at the course's own folder.
+      if (io.isStory(d.file)) doc = JSON.parse(JSON.stringify(doc).replaceAll(`assets/.ai-draft-${id}/`, `assets/${path.basename(d.file, '.story')}/`));
       const short = d.summary.split(/(?<=[.!?])\s/)[0].slice(0, 60);
       const r = io.runCommands(d.file, [{ cmd: 'course.replace', args: { doc } }], { what: `AI: ${short}` });
       cleanup(d);
