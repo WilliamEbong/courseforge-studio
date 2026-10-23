@@ -663,6 +663,10 @@ test('import a Storyline file from the course picker: same importer as cf import
 test('choose files instead of typing paths: a .story to import and an image to insert (FR-B1)', async ({ page }) => {
   await page.goto(`${base}/?token=${TOKEN}`);
   await page.getByLabel('Import format', { exact: true }).selectOption('json');
+  const importName = page.locator('#imp-name');
+  await importName.fill('Bad Name');
+  expect(await importName.evaluate((el) => el.validity.patternMismatch)).toBe(true); // the pattern compiles under the v flag
+  await importName.fill('');
   await page.locator('input[type=file][aria-label="Storyline file: choose a file"]').setInputFiles({ name: 'My Module 1.story', mimeType: 'application/octet-stream', buffer: pkg() });
   await expect(page.locator('#imp-path')).toHaveValue('imports/my-module-1.story');
   await expect(page.locator('#imp-name')).toHaveValue('my-module-1');

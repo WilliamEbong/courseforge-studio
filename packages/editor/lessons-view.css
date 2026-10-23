@@ -55,7 +55,7 @@
 .lv-tag { left: -10px; gap: 6px; padding: 1px 8px; border-radius: 5px 5px 0 0; background: var(--line-strong); font-size: 10.5px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; opacity: 0; pointer-events: none; }
 .lv-tag code { font: 10.5px/1.5 var(--mono); letter-spacing: 0; text-transform: none; } /* full colour: a faded id fails contrast on the selected tag */
 .lv-card:hover .lv-tag, .lv-card.sel .lv-tag, .lv-card:focus-within .lv-tag { opacity: 1; }
-.lv-card.sel .lv-tag { background: var(--sel); color: #ffffff; }
+.lv-card.sel .lv-tag { background: var(--sel); color: var(--sel-ink); } /* white on the light blue of dark mode is 2.7:1 */
 .lv-tools { right: -10px; gap: 2px; padding: 2px 2px 0; border: 1px solid var(--sel); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--panel); }
 .lv-tools button { height: 22px; }
 .lv-page .lv-tools button:focus-visible, .lv-page .lv-empty button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }

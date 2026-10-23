@@ -460,7 +460,7 @@ function renderPicker() {
         h('form', { class: 'new-course', onsubmit: importCourse },
           withPick(ctl('text', 'imp-path', 'Path of the .story file in the courses folder', '', { cmd: 'import_story', attrs: { required: true, placeholder: 'imports/module-1.story', spellcheck: 'false', autocomplete: 'off' } }), 'imports', '.story', 'Storyline file',
             (p, file) => { if (!$('#imp-name').value) $('#imp-name').value = safeName(file.name).replace(/\.story$/, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 60); }),
-          ctl('text', 'imp-name', 'Name of the imported course', '', { cmd: 'import_story', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\-]{0,60}', placeholder: 'module-1', spellcheck: 'false', autocomplete: 'off' } }),
+          ctl('text', 'imp-name', 'Name of the imported course', '', { cmd: 'import_story', attrs: { required: true, pattern: '[a-z0-9][a-z0-9\\-]{0,60}', placeholder: 'module-1', spellcheck: 'false', autocomplete: 'off' } }),
           ctl('select', 'imp-format', 'Import format', importFormat, { cmd: 'import_story', options: formats }),
           h('button', { type: 'submit', class: 'primary', 'data-cmd': 'import_story' }, 'Import'))))));
   $('#new-format').disabled = lessons;
