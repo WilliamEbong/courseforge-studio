@@ -931,7 +931,10 @@
       if (!started || document.hidden || rt.state.finished || !rt.state.slide) { lastT = 0; return; }
       if (lastT) {
         var dt = Math.min(t - lastT, MAX_DT);
-        if (dt > 0) { try { rt.tick(dt); } catch (e) { if (root.console) root.console.error(e); } afterChange(); }
+        // A tick changes state only by moving a running clock or logging (an end, a cue, a jump): when neither moved,
+        // nothing can render differently, so a finished or paused timeline costs no view() per frame.
+        var sig = rt.trace.length + JSON.stringify(rt.state.clock);
+        if (dt > 0) { try { rt.tick(dt); } catch (e) { if (root.console) root.console.error(e); } if (sig !== rt.trace.length + JSON.stringify(rt.state.clock)) afterChange(); }
       }
       lastT = t;
     }

@@ -48,12 +48,21 @@ export function createRuntime(docIn, opts = {}) {
   let navPending = null; // {target, back} entered once the current dispatch unwinds
   let depth = 0;
   let active = 0; // >0 while a dispatch is running
+  let slideMs = 0; // time on the current slide; unlike the base clock it does not stop at the slide's duration (latency)
 
   // ---------- helpers ----------
   const slide = () => slideById.get(S.slide);
   const layerDef = (id) => slide()?.layers.find((l) => l.id === id);
-  const objDefs = (s = slide()) => [...s.objects.map((o) => [o, null]), ...s.layers.flatMap((l) => l.objects.map((o) => [o, l.id]))];
-  const objDef = (id) => objDefs().find(([o]) => o.id === id);
+  // Per-slide object list and id index, built once: a slide's objects never change during a run, and view() looks up
+  // every object (a rebuilt list per lookup made it O(n²)). Reversed so a duplicate id resolves to the first, like find().
+  const defsCache = new WeakMap();
+  const defsOf = (s) => {
+    let d = defsCache.get(s);
+    if (!d) { const list = [...s.objects.map((o) => [o, null]), ...s.layers.flatMap((l) => l.objects.map((o) => [o, l.id]))]; d = { list, byId: new Map(list.map((x) => [x[0].id, x]).reverse()) }; defsCache.set(s, d); }
+    return d;
+  };
+  const objDefs = (s = slide()) => defsOf(s).list;
+  const objDef = (id) => defsOf(slide()).byId.get(id);
   const objState = (id) => own(S.obj, id)?.state;
   const initObjects = (s) => Object.fromEntries(objDefs(s).map(([o]) => [o.id, { state: o.hidden ? 'hidden' : o.initialState }]));
   const timeVisible = (o, layerId) => { const t = own(S.clock, layerId ?? BASE) ?? 0; return t >= o.start && (o.end === null || t < o.end); };
@@ -264,7 +273,7 @@ export function createRuntime(docIn, opts = {}) {
     if (S.review && !S.review.slides.includes(id)) { log(`review end ${S.review.quiz}`); S.review = null; }
     const revisit = S.viewed.includes(id);
     const mode = forceResume ? 'resume' : s.revisit === 'auto' ? (hasInteractive(s) ? 'resume' : 'reset') : s.revisit;
-    S.slide = id; S.feedback = null;
+    S.slide = id; S.feedback = null; slideMs = 0;
     const saved = own(S.saved, id);
     if ((revisit || forceResume) && mode === 'resume' && saved) {
       S.obj = { ...initObjects(s), ...structuredClone(saved.obj) }; S.layers = saved.layers.filter((l) => s.layers.some((x) => x.id === l)); // snapshots keep only changed objects
@@ -435,7 +444,7 @@ export function createRuntime(docIn, opts = {}) {
       lms?.interaction?.({
         id: `${quiz.id}_${S.slide}_${st.attempt}_${qs.attempts - 1}`, type: q.type, quiz: quiz.id, question: S.slide, prompt: q.prompt,
         ...answerRecord(q, qs), result: ok ? 'correct' : 'incorrect', weighting: q.points,
-        latencyMs: Math.round(own(S.clock, BASE) ?? 0), objective: quiz.id, // the vendor reports both
+        latencyMs: Math.round(slideMs), objective: quiz.id, // the vendor reports both
       });
     }
     save();
@@ -556,6 +565,7 @@ export function createRuntime(docIn, opts = {}) {
     while (remaining > 0 && !S.finished && S.slide) {
       // Step to the next interesting time (a cue or an end) so triggers fire in time order.
       const step = Math.min(remaining, nextBoundary());
+      slideMs += step; // before advance: a jump in this step re-enters and zeroes it
       advance(step);
       remaining -= step;
       flushNav();

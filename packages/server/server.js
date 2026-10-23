@@ -46,8 +46,14 @@ function sendFile(res, file, headers = {}) {
   let st = null;
   try { st = file && fs.statSync(file); } catch { /* missing or invalid name */ }
   if (!st || !st.isFile()) throw notFound(); // no directory listing
-  res.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'content-length': st.size, 'cache-control': 'no-store', ...headers });
-  pipeline(fs.createReadStream(file), res).catch(() => {}); // a read failure or client abort ends this response and closes the file
+  // One byte range (bytes=a-b, a-, -n) so Chromium can seek media; a multi-range or malformed header gets the whole file.
+  const r = /^bytes=(\d*)-(\d*)$/.exec(res.req.headers.range ?? '');
+  const ranged = !!r && !!(r[1] || r[2]) && !(r[1] && r[2] && +r[2] < +r[1]);
+  const start = !ranged ? 0 : r[1] ? +r[1] : Math.max(0, st.size - r[2]), end = ranged && r[1] && r[2] ? Math.min(+r[2], st.size - 1) : st.size - 1;
+  const head = { 'content-type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'accept-ranges': 'bytes', 'cache-control': 'no-store', ...headers };
+  if (ranged && start > end) { res.writeHead(416, { ...head, 'content-range': `bytes */${st.size}`, 'content-length': 0 }); return res.end(); }
+  res.writeHead(ranged ? 206 : 200, { ...head, 'content-length': end - start + 1, ...(ranged ? { 'content-range': `bytes ${start}-${end}/${st.size}` } : {}) });
+  pipeline(fs.createReadStream(file, ranged ? { start, end } : undefined), res).catch(() => {}); // a read failure or client abort ends this response and closes the file
 }
 
 // ponytail: oversized bodies are drained (memory stays bounded) and then refused; destroy the socket if bandwidth ever matters.
@@ -100,6 +106,7 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
   const tokenBuf = Buffer.from(token);
   const okToken = (t) => { if (typeof t !== 'string') return false; const b = Buffer.from(t); return b.length === tokenBuf.length && crypto.timingSafeEqual(b, tokenBuf); };
   const watchers = new Map(); // course file -> { clients:Set<res>, listener }
+  const listed = new Map(); // course file -> {stamp, title, cover}: relisting skips reopening (and so evicting) unchanged .story packages
 
   const server = http.createServer((req, res) => handle(req, res).catch((e) => {
     if (res.headersSent) { res.destroy(); return; }
@@ -185,8 +192,14 @@ export function createServer({ root = 'courses', token = crypto.randomBytes(24).
       if (req.method === 'GET') {
         const courses = fs.readdirSync(root).filter((f) => /\.story$|\.course\.json$/i.test(f) && NAME.test(f.replace(/\.story$|\.course\.json$/i, ''))).map((f) => {
           const file = path.join(root, f);
-          let title = null, cover = null;
-          try { const doc = io.loadCourse(file); title = doc.title; cover = coverOf(doc); } catch { /* listed as unreadable */ }
+          const s = fs.statSync(file, { throwIfNoEntry: false }), stamp = `${s?.mtimeMs}:${s?.size}`;
+          let hit = listed.get(file);
+          if (hit?.stamp !== stamp) {
+            hit = { stamp, title: null, cover: null };
+            try { const doc = io.loadCourse(file); hit.title = doc.title; hit.cover = coverOf(doc); } catch { /* listed as unreadable */ }
+            listed.set(file, hit);
+          }
+          const { title, cover } = hit;
           return { name: f.replace(/\.story$|\.course\.json$/i, ''), file: f, format: io.isStory(f) ? 'story' : 'json', title, rev: io.revision(file), cover, ...(title === null ? { invalid: true } : {}) };
         });
         return json(res, 200, { ok: true, courses });

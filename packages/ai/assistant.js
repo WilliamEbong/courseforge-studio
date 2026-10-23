@@ -20,6 +20,7 @@ export function mcpConfigFor(root, rel, dir) {
   return file;
 }
 const DRAFT = /^\.ai-draft-[0-9a-f]{12}(\.course\.json|\.story)(\.history\.json)?$/;
+const DRAFT_TTL = 60 * 60 * 1000; // runs time out after 5 minutes, so only abandoned cards get this old
 const outline = (file) => describe(io.loadCourse(file), { full: true });
 
 export const SYSTEM = (file, focus) => `You are the assistant inside CourseForge Studio, an e-learning authoring app. You edit one course file, "${file}", only through the cf tools.
@@ -99,9 +100,11 @@ export function createAssistant({ root, dataDir, provider = claude }) {
     async ask({ file, prompt, focus, signal, onEvent = () => {} }) {
       if (typeof prompt !== 'string' || !prompt.trim()) throw err(400, 'required', 'Type what you want changed.');
       settings.check();
+      // A card dropped by the editor (course switched, page reloaded) is never discarded; sweep drafts over an hour old.
+      for (const old of drafts.values()) if (Date.now() - old.at > DRAFT_TTL) cleanup(old);
       const id = crypto.randomBytes(6).toString('hex');
       const draftFile = path.join(path.dirname(file), `.ai-draft-${id}${file.endsWith('.story') ? '.story' : '.course.json'}`);
-      const d = { id, file, draftFile, rev: io.revision(file) };
+      const d = { id, file, draftFile, rev: io.revision(file), at: Date.now() };
       const work = path.join(dataDir, 'ai-runs', id);
       let r, before;
       try {
