@@ -1,0 +1,8 @@
+# The format tests compare bytes: keep LF on every platform (Windows runners default to CRLF).
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.emf binary
+*.mp4 binary
+*.webm binary
+*.wav binary
