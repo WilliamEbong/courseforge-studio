@@ -143,7 +143,7 @@ Text boxes, shapes and buttons can all hold text. Edit it in the **Text** box in
 - **Image**: click **Choose file…** to copy a picture into your course folder, or use the **Library** tab for the built-in pictures. Always describe the picture in **Alt text**. Leave it empty only if the picture is purely decorative.
 - **Video** and **Audio**: choose the media file. You can also choose a captions file (`.vtt`) and write a description. Learners get play, pause and a captions button; Ctrl+Alt+C switches captions on and off.
 - Files are published exactly as you add them, so keep them a sensible size.
-- **Slider** and **Dial** each create a number variable that changes as the learner moves them. **Hotspot** is an invisible click area. **Input** lets the learner type text into a variable. **Marker** is a small button that opens a label.
+- **Slider** and **Dial** each create a number variable that changes as the learner moves them. **Hotspot** is an invisible click area. **Input** lets the learner type text into a variable, up to its **Most characters** (400 unless you change it); the learner sees the count while typing. Tick **Report the answer to the LMS (ungraded)** to send the text to a SCORM LMS as an ungraded answer when the learner leaves the slide: it shows in LMS reports and never affects the score. **Marker** is a small button that opens a label.
 
 ## 8. States, layers and triggers
 
@@ -280,7 +280,7 @@ For slide courses, completion settings affect the score stored by the LMS. Once 
 
 Learners can use the course with the keyboard alone, and with a screen reader. Questions on small screens move below the slide at a readable size.
 
-> SCORM 1.2 limits resume data to 4,096 characters. A very long course with many variables and visited layers can go over that limit. When it does, the LMS keeps the last resume point that fitted. Test long courses in your LMS.
+> SCORM 1.2 limits resume data to 4,096 characters. A very long course with many variables and visited layers can go over that limit. When it does, the LMS keeps the last resume point that fitted. **Check** and SCORM publishing warn when a course could go over, counting every text input as full; lower **Most characters** on inputs to fix it. Test long courses in your LMS.
 
 ## 16. Bring in a Storyline 360 project
 

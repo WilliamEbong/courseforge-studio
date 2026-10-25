@@ -584,9 +584,9 @@ async function importSlideFile(e) {
 }
 // ----- course check (P1.7): the same validate + a11y queries agents use; each issue links to its object -----
 async function showCheck() {
-  const [v, a] = await Promise.all([call('GET', courseUrl('/query/validate')), call('GET', courseUrl('/query/a11y'))]);
+  const [v, a, r] = await Promise.all([call('GET', courseUrl('/query/validate')), call('GET', courseUrl('/query/a11y')), call('GET', courseUrl('/query/resume'))]);
   if (!v.ok || !a.ok) return showErrors([...(v.errors || []), ...(a.errors || [])]);
-  const issues = [...v.data.map((e) => ({ severity: 'error', code: e.code, path: e.path, message: e.message, fix: e.hint })), ...a.data];
+  const issues = [...v.data.map((e) => ({ severity: 'error', code: e.code, path: e.path, message: e.message, fix: e.hint })), ...a.data, ...(r.ok ? r.data : [])];
   const go = async (p) => {
     if (!(await leaveDrafts())) return;
     if (LV.active()) { $('#dlg').close(); LV.goto(p); return; } // lessons paths (sections/.., /cover)
@@ -1146,7 +1146,9 @@ const RENDER_TAB = {
         o.type === 'marker' && ctl('area', 'p-detail', 'Label text (shown while the marker is open)', o.detail, { cmd: C, commit: set('detail', optStr), rows: 4 }),
         o.type === 'input' && [
           ctl('text', 'p-placeholder', 'Placeholder', o.placeholder, { cmd: C, commit: set('placeholder', optStr) }),
-          ctl('select', 'p-var', 'Store the answer in text variable', o.var ?? '', { cmd: C, commit: set('var', optStr), options: [['', '(none)'], ...S.doc.variables.filter((v) => v.type === 'text').map((v) => v.name)] })],
+          ctl('select', 'p-var', 'Store the answer in text variable', o.var ?? '', { cmd: C, commit: set('var', optStr), options: [['', '(none)'], ...S.doc.variables.filter((v) => v.type === 'text').map((v) => v.name)] }),
+          ctl('num', 'p-maxlength', 'Most characters (default 400)', o.maxLength, { cmd: C, commit: set('maxLength'), attrs: { min: 1, max: 1000, step: 1 } }),
+          h('div', { class: 'checks' }, ctl('check', 'p-report', 'Report the answer to the LMS (ungraded)', !!o.report, { cmd: C, commit: (v) => [{ cmd: C, args: { id: o.id, report: v || null } }] }))],
         o.type === 'image' && ctl('select', 'p-image', 'Image asset', o.image, { cmd: C, commit: set('image'), options: S.doc.assets.map((a) => [a.id, `${a.id} (${a.path})`]) }),
         (o.type === 'video' || o.type === 'audio') && [
           ctl('select', 'p-media', `${cap(o.type)} file`, o.media, { cmd: C, commit: set('media'), options: S.doc.assets.map((a) => [a.id, `${a.id} (${a.path})`]) }),

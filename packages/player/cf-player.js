@@ -255,8 +255,11 @@
       var el;
       if (o.type === 'button' || o.type === 'hotspot') el = h('button', { type: 'button' });
       else if (o.type === 'image') el = h('img', { draggable: 'false' });
-      else if (o.type === 'input') el = h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false' });
-      else if (o.type === 'marker') {
+      else if (o.type === 'input') {
+        // The character count sits right after the input (shown while it has focus) and is its description.
+        el = h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', 'aria-describedby': id + '-count-' + o.id });
+        el._cfCount = h('span', { class: 'cf-count', id: id + '-count-' + o.id });
+      } else if (o.type === 'marker') {
         el = h('div', {}, [
           h('button', { type: 'button', class: 'cf-marker-btn', 'aria-expanded': 'false', 'aria-controls': id + '-mk-' + o.id }, [h('span', { 'aria-hidden': 'true', text: '+' })]),
           h('div', { class: 'cf-marker-label', id: id + '-mk-' + o.id, hidden: true }, [h('p', { class: 'cf-marker-title' }), h('p', { class: 'cf-marker-text' })]),
@@ -368,6 +371,10 @@
         attr(el, 'alt', o.alt || '');
       } else if (o.type === 'input') {
         if (o.value !== undefined && el.value !== o.value) el.value = o.value;
+        attr(el, 'maxlength', o.maxLength);
+        setText(el._cfCount, el.value.length + '/' + o.maxLength + ' characters');
+        applyStyle(el._cfCount, { left: o.x + 'px', top: (o.y + o.h + 4) + 'px', width: o.w + 'px' });
+        el._cfCount.hidden = !o.visible;
         attr(el, 'placeholder', o.placeholder);
         attr(el, 'aria-label', o.alt || o.placeholder || o.text || 'Text entry');
         el.disabled = !o.enabled;
@@ -835,12 +842,14 @@
         else if (el._cfRole) { el._cfRole = null; el.classList.remove('cf-draggable', 'cf-grabbed', 'cf-droppable'); }
         var lid = o.layer || 'base';
         (wanted[lid] = wanted[lid] || []).push(el);
+        if (el._cfCount) wanted[lid].push(el._cfCount);
       });
       Object.keys(els).forEach(function (oid) {
         if (present[oid]) return;
         var e = els[oid];
         if (typeof e.pause === 'function') e.pause(); // a detached video keeps playing otherwise
         if (e.parentNode) e.parentNode.removeChild(e);
+        if (e._cfCount && e._cfCount.parentNode) e._cfCount.parentNode.removeChild(e._cfCount);
         delete els[oid];
       });
       var cc = v.objects.some(function (o) { return o.captions && o.visible; });

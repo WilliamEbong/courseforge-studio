@@ -8,6 +8,7 @@ const MAX_DEPTH = 32;
 const LEARNER_EVENTS = new Set(['click', 'key', 'hoverEnter', 'hoverLeave']); // during Review Quiz only these fire triggers
 const MAX_TICK = 24 * 3600 * 1000;
 const ANSWER_EVENTS = new Set(['choose', 'point', 'drop', 'match', 'order', 'submit']); // ignored while reviewing
+export const TEXT_MAX = 400; // default input maxLength: several full answers still fit SCORM 1.2's 4096-character resume data
 const BASE = '#base';
 const JUMPED = Symbol('jumped'); // exec() result of a jump action // clock key of the base timeline; '#' cannot occur in ids, so layers never collide
 const own = (o, k) => (o && Object.hasOwn(o, k) ? o[k] : undefined);
@@ -42,6 +43,7 @@ export function createRuntime(docIn, opts = {}) {
     vars: Object.fromEntries(doc.variables.map((v) => [v.name, v.initial ?? { number: 0, boolean: false, text: '' }[v.type]])),
     history: [], viewed: [], q: {}, quiz: {}, feedback: null, status: 'incomplete', reported: null, focus: null, finished: false,
     draws: {}, // draw slide id -> the bank slide ids drawn there
+    typed: [], // reported inputs typed into since their answer was last sent to the LMS
     review: null, // {quiz, slides, results} while the learner reviews a submitted quiz
     scoreClosed: false, scoreOwner: null, manualComplete: false, // LMS reporting, separate from visible quiz grades
   };
@@ -226,7 +228,7 @@ export function createRuntime(docIn, opts = {}) {
       case 'resetQuiz': return resetQuiz(a.quiz);
       case 'reviewQuiz': return reviewQuiz(a.quiz);
       case 'completeCourse': return report('completed', true);
-      case 'exitCourse': S.finished = true; log('exit'); lms?.exit?.(); return;
+      case 'exitCourse': reportText(); S.finished = true; log('exit'); lms?.exit?.(); return;
       case 'openUrl': log(`open ${a.url}`); return;
       case 'pauseTimeline': S.paused[containerId ?? BASE] = true; log(`pause ${containerId ?? 'base'}`); return;
       case 'resumeTimeline': S.paused[containerId ?? BASE] = false; log(`resume ${containerId ?? 'base'}`); return;
@@ -260,8 +262,20 @@ export function createRuntime(docIn, opts = {}) {
   }
 
   const liveState = () => ({ obj: structuredClone(S.obj), layers: [...S.layers], clock: { ...S.clock }, ended: { ...S.ended } });
+  // Inputs with report: true send their answer as an ungraded fill-in (result neutral) when the learner leaves the slide
+  // or exits, once per round of typing (S.typed, kept in resume data), so trigger-set text, a revisit or a resume
+  // does not report it again. ponytail: closing the window reports nothing; the typed text resumes and goes on leaving.
+  function reportText() {
+    for (const [o] of objDefs()) {
+      if (o.type !== 'input' || !o.report || !o.var || !S.typed.includes(o.id)) continue;
+      S.typed = S.typed.filter((id) => id !== o.id);
+      const text = String(getVar(o.var) ?? '');
+      if (text) lms?.interaction?.({ id: o.id, type: 'fill', question: S.slide, prompt: o.alt ?? o.placeholder, response: text, responseLabels: [text], correct: [], result: 'neutral', latencyMs: Math.round(slideMs) });
+    }
+  }
   function leaveSlide() {
     if (!S.slide) return;
+    reportText();
     S.saved[S.slide] = liveState();
     log(`leave ${S.slide}`);
   }
@@ -657,7 +671,8 @@ export function createRuntime(docIn, opts = {}) {
           if (ev.answer !== undefined || (!ev.target && qs)) { if (qs && !qs.result) { qs.text = String(ev.text ?? '').slice(0, 1000); log('input answer'); } break; }
           const o = objDef(ev.target)?.[0];
           if (!o || o.type !== 'input') { log(`warn ${ev.target} is not an input`); break; }
-          if (o.var) setVar(o.var, String(ev.text ?? '').slice(0, 1000));
+          if (o.var) setVar(o.var, String(ev.text ?? '').slice(0, o.maxLength ?? TEXT_MAX));
+          if (o.report && !S.review && !S.typed.includes(o.id)) S.typed.push(o.id); // review stays unreported
           break;
         }
         case 'slide': { // slider or dial moved: {target, value}
@@ -739,6 +754,7 @@ export function createRuntime(docIn, opts = {}) {
       // CF resume policy: retain the reporting boundary of this attempt, including an absent score.
       rp: [S.scoreClosed, S.sentRaw ?? null, S.scoreOwner, S.manualComplete],
       ...(dr.length ? { dr: Object.fromEntries(dr) } : {}),
+      ...(S.typed.length ? { tp: [...S.typed] } : {}),
       ...(S.review ? { rv: { quiz: S.review.quiz, results: enc([S.review.results])[0] } } : {}), // the list is rebuilt on restore
     };
     // Large assessments use slide indexes and omit repeated question keys/selected IDs; v1 remains readable.
@@ -856,6 +872,7 @@ export function createRuntime(docIn, opts = {}) {
     }
     Object.assign(S, {
       history: ids(snap.history, snap.v), viewed: ids(snap.viewed, snap.v), vars, saved, q, draws: restoreDraws(snap.dr),
+      typed: Array.isArray(snap.tp) ? snap.tp.filter((id) => typeof id === 'string') : [],
       quiz: isObj(snap.quiz) ? Object.fromEntries(Object.entries(snap.quiz).filter(([k, v]) => doc.quizzes.some((x) => x.id === k) && isObj(v)).map(([k, v]) => [k, {
         attempt: Number.isSafeInteger(v.attempt) && v.attempt >= 0 ? v.attempt : 0, submitted: v.submitted === true,
         passed: v.passed === true, percent: Number.isFinite(v.percent) && v.percent >= 0 && v.percent <= 100 ? v.percent : 0,
@@ -925,6 +942,7 @@ export function createRuntime(docIn, opts = {}) {
         image: asset(over.image ?? o.image)?.path ?? null, alt: o.alt ?? asset(o.image)?.alt ?? '',
         state: st, visible: visible(o.id), enabled: clickable(o.id), interactive: INTERACTIVE.has(o.type), tabIndex: o.tabIndex,
         value: o.type === 'input' && o.var ? String(getVar(o.var) ?? '') : undefined, placeholder: o.placeholder,
+        ...(o.type === 'input' ? { maxLength: o.maxLength ?? TEXT_MAX } : {}),
         ...(isRange(o) ? { ...rangeOf(o), value: snapValue(o, getVar(o.var)), live: o.live !== false, name: o.name, ...(o.type === 'dial' ? { startAngle: o.startAngle ?? -90, endAngle: o.endAngle ?? 90 } : {}) } : {}),
         ...(o.type === 'marker' ? { detail: interp(o.detail) } : {}),
         ...(o.enter || o.exit ? { anim: effectOf(o, layerId) } : {}),

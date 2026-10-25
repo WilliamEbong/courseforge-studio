@@ -120,6 +120,8 @@ button.cf-obj:disabled { cursor: not-allowed; }
 img.cf-obj { display: block; padding: 0; object-fit: fill; user-select: none; }
 input.cf-obj { padding: 0 14px; border: 2px solid #6b7080; border-radius: 8px; background-color: #ffffff; color: var(--cf-stage-ink); }
 input.cf-obj:focus-visible { border-color: var(--cf-stage-accent); }
+.cf-count { position: absolute; font-size: 16px; line-height: 1.3; text-align: right; white-space: nowrap; color: var(--cf-stage-ink); visibility: hidden; pointer-events: none; }
+input.cf-obj:focus + .cf-count { visibility: visible; }
 
 /* ---------- media ---------- */
 video.cf-obj, audio.cf-obj { display: block; padding: 0; background-color: #000000; object-fit: contain; }

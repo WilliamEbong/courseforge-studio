@@ -410,6 +410,8 @@ Add an object to a slide (or one of its layers). Types: text, shape, button, ima
 | var | string | `^(?!__)[A-Za-z_][A-Za-z0-9_]*$`; input: bound text variable; slider/dial: bound number variable (required) |
 | placeholder | string |  |
 | tabIndex | integer |  |
+| maxLength | integer | input: most characters the learner can type (default 400; SCORM 1.2 resume data holds 4096 characters for the whole course) |
+| report | boolean | input: report the answer to the LMS as an ungraded fill-in interaction (result neutral, no score) when the learner leaves the slide; needs var |
 | min | number | slider/dial: value at the start (default 0) |
 | max | number | slider/dial: value at the end (default 10 for a slider, 12 for a dial) |
 | step | number | slider/dial: values snap to min + n*step (default 1) |
@@ -464,6 +466,8 @@ Change object properties (geometry, text, style (merged; a key set to null is re
 | var | string\|null | `^(?!__)[A-Za-z_][A-Za-z0-9_]*$`; input: bound text variable; slider/dial: bound number variable (required) |
 | placeholder | string\|null |  |
 | tabIndex | integer\|null |  |
+| maxLength | integer\|null | input: most characters the learner can type (default 400; SCORM 1.2 resume data holds 4096 characters for the whole course) |
+| report | boolean\|null | input: report the answer to the LMS as an ungraded fill-in interaction (result neutral, no score) when the learner leaves the slide; needs var |
 | min | number\|null | slider/dial: value at the start (default 0) |
 | max | number\|null | slider/dial: value at the end (default 10 for a slider, 12 for a dial) |
 | step | number\|null | slider/dial: values snap to min + n*step (default 1) |

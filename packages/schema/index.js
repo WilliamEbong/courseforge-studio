@@ -73,6 +73,8 @@ export const objectSchema = {
     exit: effectSchema('exit effect: ends at the object end, starting at end - duration; ignored without an end'),
     var: { type: 'string', pattern: VAR_NAME, description: 'input: bound text variable; slider/dial: bound number variable (required)' },
     placeholder: str, tabIndex: { type: 'integer' },
+    maxLength: { type: 'integer', minimum: 1, maximum: 1000, description: 'input: most characters the learner can type (default 400; SCORM 1.2 resume data holds 4096 characters for the whole course)' },
+    report: { type: 'boolean', description: 'input: report the answer to the LMS as an ungraded fill-in interaction (result neutral, no score) when the learner leaves the slide; needs var' },
     min: { type: 'number', description: 'slider/dial: value at the start (default 0)' },
     max: { type: 'number', description: 'slider/dial: value at the end (default 10 for a slider, 12 for a dial)' },
     step: { type: 'number', description: 'slider/dial: values snap to min + n*step (default 1)' },
@@ -438,6 +440,8 @@ export function validate(doc) {
       for (const [k, st] of Object.entries(o.states || {})) if (st.image && !assetIds.has(st.image)) errs.push({ path: `${op}/states/${k}/image`, code: 'ref', message: `asset "${st.image}" not found`, hint: `assets: ${list(assetIds)}` });
       if (o.type === 'image' && !o.image) errs.push({ path: op + '/image', code: 'required', message: 'image objects need an image asset id' });
       if (o.type === 'input' && o.var) { if (!vars.has(o.var)) varRef(o.var, op + '/var'); else if (vars.get(o.var).type !== 'text') errs.push({ path: op + '/var', code: 'type', message: `input must bind a text variable; "${o.var}" is ${vars.get(o.var).type}` }); }
+      for (const k of ['maxLength', 'report']) if (o[k] !== undefined && o.type !== 'input') errs.push({ path: `${op}/${k}`, code: 'semantic', message: `${k} applies to input objects only` });
+      if (o.type === 'input' && o.report && !o.var) errs.push({ path: op + '/report', code: 'required', message: `input ${o.id} reports its answer but stores it in no variable`, hint: `object.set {"id":"${o.id}","var":"<text variable>"}` });
       if (o.type === 'slider' || o.type === 'dial') {
         const numVars = () => `number variables: ${list([...vars.values()].filter((v) => v.type === 'number').map((v) => v.name))}; add one with var.add`;
         if (!o.var) errs.push({ path: op + '/var', code: 'required', message: `${o.type} objects need var (a number variable)`, hint: numVars() });

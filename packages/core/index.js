@@ -3,6 +3,7 @@ export { PUBLISH_TARGETS } from './publish-targets.js';
 import { check, toJsonSchema, normalize, fillDefaults, validate, jsonSchema, serialize, rangeOf } from '../schema/index.js';
 import { commands as list, locate } from './commands.js';
 import { a11yIssues } from './a11y.js';
+import { createRuntime, seededRng, TEXT_MAX } from '../runtime/index.js';
 import { PRESETS, FONTS, themeOf } from '../schema/themes.js';
 import LIBRARY from '../library/index.json' with { type: 'json' };
 
@@ -198,6 +199,38 @@ export function describe(doc, { full = false } = {}) {
   return out.join('\n');
 }
 
+/**
+ * SCORM 1.2 resume-size estimate: play the course once with every slide visited and every text input and typed answer
+ * full, then measure the resume snapshot against cmi.suspend_data's 4096 characters. [] when it fits.
+ * ponytail: an estimate, not a bound. One menu walk with the seeded draw and plain letters: undrawn bank slides, drag,
+ * match and order answers, slides after an exit trigger, and quotes (two characters each) are not counted.
+ */
+export function resumeIssues(doc) {
+  try { return resumeEstimate(doc); } catch { return []; } // a course that cannot play yet gets its errors from validate
+}
+function resumeEstimate(doc) {
+  const d = structuredClone(normalize(doc));
+  if (d.mode === 'lessons') return [];
+  const cap = (o) => o.maxLength ?? TEXT_MAX;
+  const inputs = d.slides.flatMap((s) => [...s.objects, ...s.layers.flatMap((l) => l.objects)]).filter((o) => o.type === 'input' && o.var);
+  for (const v of d.variables) {
+    const caps = inputs.filter((o) => o.var === v.name).map(cap);
+    if (caps.length) v.initial = 'x'.repeat(Math.max(...caps));
+  }
+  d.player.menu = true;
+  const rt = createRuntime(d, { rng: seededRng(1) }).start();
+  for (const s of d.slides) {
+    rt.dispatch({ type: 'menu', slide: s.id });
+    if (s.question?.type === 'fill') rt.dispatch({ type: 'input', answer: true, text: 'x'.repeat(1000) });
+  }
+  const size = JSON.stringify(rt.snapshot()).length;
+  if (size <= 4096) return [];
+  const big = [...inputs].sort((a, b) => cap(b) - cap(a))[0];
+  const fixable = big && cap(big) > 50;
+  return [{ severity: 'warning', code: 'resume-size', path: '/', message: `Resume data can reach about ${size} characters${inputs.length ? ' when every text field is full' : ''}; SCORM 1.2 saves at most 4096, so a learner could lose their place. ${fixable ? 'Lower the most characters (maxLength) of text inputs.' : 'Split the course or use fewer variables and layers.'}`,
+    ...(fixable ? { fix: `object.set {"id":"${big.id}","maxLength":${Math.floor(cap(big) / 2)}}` } : {}) }];
+}
+
 // ---------- queries (read-only) ----------
 const argsOf = (def) => toJsonSchema(def.args);
 export const queries = {
@@ -233,6 +266,7 @@ export const queries = {
   } },
   'validate': { summary: 'Validation errors ([] = valid).', run: (d) => validate(d) },
   'a11y': { summary: 'Accessibility issues (alt text, names, labels, contrast, tab order, timing, titles) with the command that fixes each.', run: (d) => a11yIssues(normalize(d)) },
+  'resume': { summary: 'SCORM 1.2 resume-size warning: [] when the worst-case resume data (every text field full) fits 4096 characters.', run: (d) => resumeIssues(d) },
   'schema': { summary: 'JSON Schema of the course document.', run: () => jsonSchema() },
   'theme.list': { summary: 'Theme presets {name, label, scheme, tokens}, fonts {name, label, stack} and the current {preset, font} (theme.apply applies them).', run: (d) => ({
     presets: Object.entries(PRESETS).map(([name, p]) => ({ name, ...p })),

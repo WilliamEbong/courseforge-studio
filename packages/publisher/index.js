@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { validate, normalize } from '../schema/index.js';
+import { resumeIssues } from '../core/index.js';
 import { PRESETS } from '../schema/themes.js';
 import { runtimeBundle, playerBundle } from './bundle.js';
 import { manifest } from './scorm12-manifest.js';
@@ -30,7 +31,7 @@ const inlineJs = (s) => s.replace(/<\/script/gi, '<\\/script');
 /* * Runtime interaction record -> CFScorm record (item 5). */
 export function toScormInteraction(r) {
   var type = r.type === 'tf' ? 'true-false' : r.type === 'fill' ? 'fill-in' : r.type === 'matching' || r.type === 'dragdrop' ? 'matching' : r.type === 'sequence' ? 'sequencing' : 'choice';
-  var out = { id: String(r.id).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 255) || 'interaction', type: type, result: r.result === 'correct' ? 'correct' : 'wrong', weighting: r.weighting };
+  var out = { id: String(r.id).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 255) || 'interaction', type: type, result: r.result === 'correct' || r.result === 'neutral' ? r.result : 'wrong', weighting: r.weighting };
   if (typeof r.latencyMs === 'number' && r.latencyMs >= 0) out.latencyMs = r.latencyMs; // vendor reports latency
   if (typeof r.objective === 'string' && /^[A-Za-z0-9_.-]{1,255}$/.test(r.objective)) out.objective = r.objective;
   if (type === 'choice' || type === 'matching' || type === 'sequencing') { // matching: [[source, target], ...]; sequencing: ordered indices
@@ -214,6 +215,8 @@ export function publishScorm12(doc, outDir, { courseDir, zip = false } = {}) {
   const masteryScore = !qc ? undefined : quizLesson ? (quizLesson.passPercent ?? 80) : d.quizzes.find((q) => q.id === qc.quiz)?.passPercent;
   fs.writeFileSync(path.join(out, 'imsmanifest.xml'), manifest({ id: d.id, title: d.title, version: '1.0', masteryScore, files, launch: 'index.html' }));
   const result = { files: [...files, 'imsmanifest.xml'].sort(), launch: 'index.html' };
+  const warnings = resumeIssues(d);
+  if (warnings.length) result.warnings = warnings;
   if (zip) { result.zip = out + '.zip'; writeZip(out, result.zip, result.files); } // only our files, never strays in the folder
   return result;
 }

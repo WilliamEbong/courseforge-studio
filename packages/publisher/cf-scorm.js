@@ -56,7 +56,8 @@
       if (!isPairs(rec.response) || !isPairs(rec.correct) || !rec.correct.length) return null;
       resp = pairs(rec.response); pats = [pairs(rec.correct)];
     } else return null;
-    if (rec.result !== 'correct' && rec.result !== 'wrong') return null;
+    // neutral: an ungraded answer (a reported text input), recorded without correct_responses.
+    if (rec.result !== 'correct' && rec.result !== 'wrong' && rec.result !== 'neutral') return null;
     if (rec.weighting !== undefined && !(typeof rec.weighting === 'number' && isFinite(rec.weighting))) return null;
     if (rec.latencyMs !== undefined && !(typeof rec.latencyMs === 'number' && rec.latencyMs >= 0)) return null;
     if (rec.objective !== undefined && !isId(rec.objective)) return null;
